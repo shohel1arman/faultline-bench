@@ -1,0 +1,32 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+
+# raw downloads and images (large, re-fetchable)
+data/raw/
+data/images/
+
+# model outputs and caches (large; released separately)
+outputs/
+runs/
+*.npz
+*.pt
+*.safetensors
+*.bin
+
+# notebooks scratch
+.ipynb_checkpoints/
+
+# local secrets
+.env

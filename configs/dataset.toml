@@ -1,0 +1,31 @@
+# Dataset construction config for FaultLine v0.
+# All thresholds are fractions of image area (areas) or image side length (gaps).
+
+seed = 20261014
+version = "v0"
+output = "data/faultline_v0.jsonl"
+scene_graphs = "data/raw/val_sceneGraphs.json"
+image_data = "data/raw/image_data.json"
+
+[quota]
+per_cell = 400          # main samples per (type, severity) cell
+reserve_per_cell = 60   # extra samples per cell, used to replace items rejected in verification
+controls = 402          # clean controls, split evenly over the three question types
+reserve_controls = 60
+core_per_cell = 200     # stratified subset that every model is evaluated on
+core_controls = 201
+max_per_image = 2
+
+[target]
+min_area = 0.02         # target object must cover at least this fraction of the image
+anchor_min_area = 0.01
+
+[severity]
+salient_area = 0.10     # attribute/object: S1 needs target area >= this, else S2
+
+[relation]
+min_gap = 0.02          # objects must be separated by at least this along the relation axis
+min_overlap = 0.30      # and overlap by at least this on the other axis
+salient_gap = 0.15      # S1: gap >= salient_gap and both objects >= salient_min_area
+salient_min_area = 0.03
+subtle_gap = 0.06       # S3: gap < subtle_gap; S2 otherwise

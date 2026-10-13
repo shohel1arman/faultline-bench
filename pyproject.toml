@@ -1,0 +1,36 @@
+[project]
+name = "faultline"
+version = "0.1.0"
+description = "Benchmark for cross-modal conflict detection, resolution and attribution in vision-language models"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+eval = [
+    "torch",
+    "transformers",
+    "accelerate",
+    "bitsandbytes",
+    "pillow",
+]
+analysis = [
+    "numpy",
+    "pandas",
+    "scipy",
+    "matplotlib",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["faultline*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
