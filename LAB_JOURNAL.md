@@ -13,6 +13,10 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
 - Repository scaffold, config, README.
 - Data sources checked: GQA scene graphs (sceneGraphs.zip, 42.7 MB) and Visual Genome
   image metadata (image_data.json.zip, 17.6 MB); both CC BY 4.0 per their download pages.
+- Generation pipeline: candidate extraction, geometric relation check, typed and graded
+  edits, MCQ options, controls with foils, quota assignment, schema validation.
+  17 unit tests on synthetic scene graphs; end-to-end smoke build on 3,000 synthetic images.
+- Construction rules written up in docs/DATASET.md.
 
 **Decisions**
 - Images come from Visual Genome, not COCO val2017 directly. GQA bounding boxes are in VG
@@ -31,5 +35,12 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
 - S3 colour edits (e.g. red to orange) may be ambiguous for humans too; the verification
   pass decides whether S3 survives.
 
+**Problems found while building**
+- Colour distractors could be near the true colour (beige vs tan), making MCQ ambiguous.
+  Distractors now exclude near colours of the true answer.
+- Some object pairs were hypernyms (taxi/car, duck/bird, mug/cup, desk/table,
+  monitor/television, sign/stop sign); removed from the vocabulary.
+
 **Next**
-- Generation pipeline with unit tests; run on real data on the Mac.
+- Run download + build on real GQA val data; check cell supply against the 400+60 quota.
+- Read 50 generated samples with their images before fetching all images.
