@@ -9,11 +9,12 @@ dependencies = []
 
 [project.optional-dependencies]
 eval = [
-    "torch",
-    "transformers",
+    "torch>=2.6",
+    "transformers>=4.57",
     "accelerate",
     "bitsandbytes",
     "pillow",
+    "num2words",
 ]
 analysis = [
     "numpy",
