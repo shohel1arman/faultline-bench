@@ -92,14 +92,14 @@ def parse_scene(image_id, graph):
 
 
 def load_scene_graphs(path):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         raw = json.load(f)
     return {str(k): v for k, v in raw.items()}
 
 
 def load_image_meta(path):
     """Visual Genome image_data.json -> {image_id: record}. Handles v1.0 ('id') and v1.2 ('image_id')."""
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         rows = json.load(f)
     meta = {}
     for r in rows:

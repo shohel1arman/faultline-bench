@@ -17,6 +17,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+# model outputs can contain any unicode; the Windows console default codec cannot print all of it
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 from faultline.models import HFBackend, load_image  # noqa: E402
 from faultline.prompts import PROMPT_VERSION  # noqa: E402
 from faultline.runner import run, select  # noqa: E402
@@ -64,7 +68,7 @@ def main():
             "platform": platform.platform(), "started": time.strftime("%Y-%m-%d %H:%M:%S"),
             "dataset": args.dataset, "subset": args.subset, "n_records": len(records)}
     out.parent.mkdir(parents=True, exist_ok=True)
-    with open(out.with_suffix(".meta.json"), "w") as f:
+    with open(out.with_suffix(".meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
     print(json.dumps(meta, indent=2))
 

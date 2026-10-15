@@ -18,7 +18,7 @@ def done_ids(path):
     ids = set()
     if not os.path.exists(path):
         return ids
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
@@ -80,11 +80,11 @@ def run(backend, records, image_dir, out_path, model_key, max_side, load_image, 
             f.seek(-1, os.SEEK_END)
             needs_nl = f.read(1) != b"\n"
         if needs_nl:
-            with open(out_path, "a") as f:
+            with open(out_path, "a", encoding="utf-8", newline="\n") as f:
                 f.write("\n")
 
     t_start = time.perf_counter()
-    with open(out_path, "a") as f:
+    with open(out_path, "a", encoding="utf-8", newline="\n") as f:
         for i, rec in enumerate(todo, 1):
             image = load_image(Path(image_dir) / rec["image_file"], max_side)
             try:

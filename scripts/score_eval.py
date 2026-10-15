@@ -12,6 +12,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+# model outputs can contain any unicode; the Windows console default codec cannot print all of it
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 from faultline.schema import read_jsonl  # noqa: E402
 from faultline.score import by_cell, outcome, summarize  # noqa: E402
 
@@ -74,7 +78,7 @@ def main():
         saved.extend(outs)
 
     if args.save:
-        with open(args.save, "w") as f:
+        with open(args.save, "w", encoding="utf-8", newline="\n") as f:
             for o in saved:
                 f.write(json.dumps(o) + "\n")
 

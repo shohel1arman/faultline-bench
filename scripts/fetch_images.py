@@ -61,7 +61,7 @@ def main():
             if i % 100 == 0 or i == len(futs):
                 print(f"{i}/{len(futs)} done, {len(failed)} failed")
     if failed:
-        (out / "failed.txt").write_text("\n".join(failed) + "\n")
+        (out / "failed.txt").write_text("\n".join(failed) + "\n", encoding="utf-8")
         print(f"{len(failed)} failures written to {out / 'failed.txt'}")
 
 

@@ -73,7 +73,7 @@ def main():
     write_jsonl(out, records)
     stats = {"records": len(records), "supply": {f"{t}_{s}": n for (t, s), n in supply.items()},
              "shortfalls": short, "config": cfg}
-    with open(out.with_suffix(".stats.json"), "w") as f:
+    with open(out.with_suffix(".stats.json"), "w", encoding="utf-8") as f:
         json.dump(stats, f, indent=2)
     print(f"wrote {out}")
     if short:

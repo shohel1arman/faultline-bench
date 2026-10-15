@@ -151,7 +151,7 @@ def test_run_writes_resumes_and_retries(tmp_path, records):
 
     fake = TextFollower(records, fail_ids=[bad])
     run(fake, rows, "imgs", out, "fake", 672, load_image_stub, log_every=1000)
-    lines = [json.loads(l) for l in out.read_text().splitlines()]
+    lines = [json.loads(l) for l in out.read_text(encoding="utf-8").splitlines()]
     assert len(lines) == len(rows)
     assert [l["id"] for l in lines if l["error"]] == [bad]
     assert done_ids(out) == {r["id"] for r in rows} - {bad}
@@ -163,7 +163,7 @@ def test_run_writes_resumes_and_retries(tmp_path, records):
     run(fake2, rows, "imgs", out, "fake", 672, load_image_stub, log_every=1000)
     assert fake2.calls == 8
     assert done_ids(out) == {r["id"] for r in rows}
-    for line in out.read_text().splitlines():
+    for line in out.read_text(encoding="utf-8").splitlines():
         if line.startswith('{"id": "fl_trunc'):
             continue
         json.loads(line)
@@ -183,7 +183,7 @@ def test_text_follower_scores_like_a_text_follower(tmp_path, records):
     out = tmp_path / "o.jsonl"
     run(TextFollower(records), rows, "imgs", out, "fake", 672, load_image_stub, log_every=1000)
     recs = {r["id"]: r for r in records}
-    outs = [outcome(recs[l["id"]], l["probes"]) for l in map(json.loads, out.read_text().splitlines())]
+    outs = [outcome(recs[l["id"]], l["probes"]) for l in map(json.loads, out.read_text(encoding="utf-8").splitlines())]
     s = summarize(outs)
     assert s["perceive"] == 1.0
     assert s["read"] == 1.0

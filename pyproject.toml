@@ -10,6 +10,7 @@ dependencies = []
 [project.optional-dependencies]
 eval = [
     "torch>=2.6",
+    "torchvision",
     "transformers>=4.57",
     "accelerate",
     "bitsandbytes",
@@ -25,6 +26,21 @@ analysis = [
 
 [dependency-groups]
 dev = ["pytest"]
+
+# PyPI only has CPU builds of torch for Windows; take torch from the PyTorch CUDA 13.0 index.
+# The Linux cu130 build includes sm_75 (RTX 20-series); check on Windows with torch.cuda.get_arch_list().
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu130", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+  { index = "pytorch-cu130", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
 
 [build-system]
 requires = ["setuptools>=68"]
