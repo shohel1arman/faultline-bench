@@ -29,22 +29,31 @@ scripts/            command-line entry points
 configs/            dataset and evaluation configs
 tests/              unit tests (run on synthetic fixtures, no downloads needed)
 docs/DATASET.md     construction rules, in enough detail to reproduce the data
+docs/EVAL.md        probes, parsing and metrics
+docs/RUNNING.md     environment setup and running long evaluations
 data/               generated dataset files (raw downloads and images are not tracked)
 LAB_JOURNAL.md      dated record of what was planned, done and found
 ```
 
 ## Quickstart
 
-Requires Python 3.11+. The dataset pipeline uses only the standard library.
+Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). Dataset construction uses only
+the standard library; evaluation needs a CUDA GPU.
 
 ```bash
-uv sync --group dev
+uv sync --extra eval --group dev
 uv run pytest
 
 uv run python scripts/download_data.py --out data/raw
 uv run python scripts/build_dataset.py --config configs/dataset.toml
 uv run python scripts/fetch_images.py --dataset data/faultline_v0.jsonl --out data/images
+
+uv run python scripts/run_eval.py --model qwen25vl-3b --device cuda:0 --limit 5
+uv run python scripts/score_eval.py outputs/qwen25vl-3b/core_limit5.jsonl --show 2
 ```
+
+See docs/RUNNING.md for setup on Windows (WSL2) and for long runs, and docs/EVAL.md for
+the probes and metrics.
 
 ## Data sources and licenses
 
