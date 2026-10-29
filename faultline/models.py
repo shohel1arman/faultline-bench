@@ -40,7 +40,12 @@ class HFBackend:
         self.device = device
         torch_dtype = getattr(torch, dtype)
         self.dtype = torch_dtype
-        kwargs = {"dtype": torch_dtype, "device_map": {"": device}}
+        on_cuda = device.startswith("cuda")
+        if quant != "none" and not on_cuda:
+            raise ValueError("4-bit and 8-bit loading need a CUDA GPU; use quant = \"none\" on Apple GPUs")
+        kwargs = {"dtype": torch_dtype}
+        if on_cuda:
+            kwargs["device_map"] = {"": device}
         if quant == "nf4":
             kwargs["quantization_config"] = BitsAndBytesConfig(
                 load_in_4bit=True,
@@ -54,6 +59,8 @@ class HFBackend:
 
         self.processor = AutoProcessor.from_pretrained(hf_id)
         self.model = AutoModelForImageTextToText.from_pretrained(hf_id, **kwargs)
+        if not on_cuda:
+            self.model.to(device)
         self.model.eval()
         self.tok = self.processor.tokenizer
         self.letter_ids = {L: self._letter_token_ids(L) for L in LETTERS}
@@ -109,5 +116,14 @@ class HFBackend:
         return {"probs": probs, "letter_mass": mass, "n_in": int(inputs["input_ids"].shape[1])}
 
     def cleanup(self):
-        if self.torch.cuda.is_available():
+        if self.device.startswith("cuda"):
             self.torch.cuda.empty_cache()
+        elif self.device == "mps":
+            self.torch.mps.empty_cache()
+
+    def memory_gib(self):
+        if self.device.startswith("cuda"):
+            return self.torch.cuda.memory_allocated(self.device) / 2**30
+        if self.device == "mps":
+            return self.torch.mps.current_allocated_memory() / 2**30
+        return None

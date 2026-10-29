@@ -9,6 +9,7 @@ Outputs go to outputs/<model>/<subset>.jsonl and are resumed automatically.
 
 import argparse
 import json
+import os
 import platform
 import sys
 import time
@@ -25,6 +26,14 @@ from faultline.models import HFBackend, load_image  # noqa: E402
 from faultline.prompts import PROMPT_VERSION  # noqa: E402
 from faultline.runner import run, select  # noqa: E402
 from faultline.schema import read_jsonl  # noqa: E402
+
+
+def device_name(torch, device):
+    if device.startswith("cuda") and torch.cuda.is_available():
+        return torch.cuda.get_device_name(device)
+    if device == "mps":
+        return "Apple GPU (mps), " + platform.machine()
+    return device
 
 
 def parse_shard(s):
@@ -52,6 +61,9 @@ def main():
     if args.model not in mcfg["models"]:
         sys.exit(f"unknown model {args.model}; known: {sorted(mcfg['models'])}")
     cfg = {**mcfg["defaults"], **mcfg["models"][args.model]}
+    if args.device == "mps" and cfg["quant"] != "none":
+        sys.exit(f"{args.models_config} uses quant={cfg['quant']}, which needs CUDA; "
+                 "use --models-config configs/models_mac.toml on a Mac")
 
     records = select(read_jsonl(args.dataset), args.subset, parse_shard(args.shard), args.limit)
     tag = args.subset if not args.limit else f"{args.subset}_limit{args.limit}"
@@ -59,12 +71,16 @@ def main():
         tag += "_shard" + args.shard.replace("/", "of")
     out = Path(args.out or f"outputs/{args.model}/{tag}.jsonl")
 
+    if args.device == "mps":
+        # let the few operators without an Apple GPU kernel run on the CPU instead of failing;
+        # must be set before torch is imported
+        os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
     import torch
     import transformers
 
     meta = {"model": args.model, **cfg, "prompt_version": PROMPT_VERSION,
             "transformers": transformers.__version__, "torch": torch.__version__,
-            "gpu": torch.cuda.get_device_name(args.device) if torch.cuda.is_available() else None,
+            "gpu": device_name(torch, args.device),
             "platform": platform.platform(), "started": time.strftime("%Y-%m-%d %H:%M:%S"),
             "dataset": args.dataset, "subset": args.subset, "n_records": len(records)}
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -74,8 +90,9 @@ def main():
 
     t0 = time.perf_counter()
     backend = HFBackend(cfg["hf_id"], device=args.device, quant=cfg["quant"], dtype=cfg["dtype"])
-    print(f"loaded in {time.perf_counter() - t0:.0f}s; "
-          f"gpu memory {torch.cuda.memory_allocated(args.device) / 2**30:.2f} GiB")
+    mem = backend.memory_gib()
+    mem_txt = f"; gpu memory {mem:.2f} GiB" if mem is not None else ""
+    print(f"loaded in {time.perf_counter() - t0:.0f}s{mem_txt}")
 
     run(backend, records, args.images, out, args.model, cfg["max_side"], load_image)
 

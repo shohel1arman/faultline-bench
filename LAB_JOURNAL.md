@@ -89,3 +89,31 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
 
 **Next**
 - Windows setup, dataset build, 5-record smoke test per model; record seconds per record.
+
+## 2026-10-30
+
+**Planned**
+- Run the small models on the Mac mini (Apple Silicon) first; other hardware later.
+
+**Done**
+- Apple GPU (MPS) support: models load in full precision and are moved to `mps`; quantised
+  loading is refused off CUDA with a clear error; GPU memory and cache handling per device;
+  PYTORCH_ENABLE_MPS_FALLBACK set for `--device mps` so operators without an Apple GPU
+  kernel fall back to the CPU instead of failing.
+- configs/models_mac.toml: the same four models, float16, no quantisation.
+- bitsandbytes is no longer installed on macOS (CUDA-only).
+- macOS section in docs/RUNNING.md, using `caffeinate -i` to keep the Mac awake during runs.
+- 38 tests pass. MPS itself could not be exercised here; the first real check is the
+  5-record smoke test on the Mac.
+
+**Decisions**
+- A model's results come from one hardware profile only. If the four small models run on
+  the Mac, they are reported in float16 without quantisation, which removes the NF4 caveat.
+- 7B/8B models are not in the Mac profile until the Mac's memory size is known and their
+  model ids are checked.
+
+**Problems / risks**
+- Schedule: registration is Nov 10. The dataset still has to be built on real GQA data.
+
+**Next**
+- Mac: setup check, dataset build, cell table, 5-record smoke test with internvl3-2b.

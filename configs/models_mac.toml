@@ -1,0 +1,21 @@
+# Apple Silicon (MPS) profile: full-precision weights, no quantisation (bitsandbytes is CUDA-only).
+# Approximate weight memory in float16: InternVL3-2B ~4.2 GB, SmolVLM2-2.2B ~4.5 GB,
+# Qwen2.5-VL-3B ~7.5 GB, Qwen3-VL-4B ~9 GB. Leave several GB free for activations and macOS.
+# A model's rows in the paper come from one profile only; never mix profiles for one model.
+
+[defaults]
+quant = "none"
+dtype = "float16"    # switch a model to "bfloat16" if its smoke test shows non-finite logits
+max_side = 672
+
+[models.internvl3-2b]
+hf_id = "OpenGVLab/InternVL3-2B-hf"
+
+[models.smolvlm2-2b]
+hf_id = "HuggingFaceTB/SmolVLM2-2.2B-Instruct"
+
+[models.qwen25vl-3b]
+hf_id = "Qwen/Qwen2.5-VL-3B-Instruct"
+
+[models.qwen3vl-4b]
+hf_id = "Qwen/Qwen3-VL-4B-Instruct"

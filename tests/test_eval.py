@@ -265,3 +265,30 @@ def test_generate_returns_only_new_tokens():
     b = stub_backend({})
     res = b.generate([{"role": "user", "text": "q", "image": "IMG"}], 8)
     assert res == {"output": "14 15", "n_in": 3, "n_out": 2}
+
+
+# ------------------------------------------------------------------ configs and devices
+
+def test_quantisation_is_refused_off_cuda():
+    from faultline.models import HFBackend
+    with pytest.raises(ValueError, match="CUDA"):
+        HFBackend("unused/model", device="mps", quant="nf4")
+
+
+def test_model_profiles_agree_on_ids():
+    import tomllib
+    with open("configs/models.toml", "rb") as f:
+        cuda = tomllib.load(f)
+    with open("configs/models_mac.toml", "rb") as f:
+        mac = tomllib.load(f)
+    assert mac["defaults"]["quant"] == "none"
+    for key, m in mac["models"].items():
+        if key in cuda["models"]:
+            assert m["hf_id"] == cuda["models"][key]["hf_id"], key
+
+
+def test_memory_and_cleanup_on_cpu_device():
+    b = stub_backend({})
+    b.device = "cpu"
+    assert b.memory_gib() is None
+    b.cleanup()

@@ -38,7 +38,7 @@ LAB_JOURNAL.md      dated record of what was planned, done and found
 ## Quickstart
 
 Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/). Dataset construction uses only
-the standard library; evaluation needs a CUDA GPU.
+the standard library; evaluation needs an NVIDIA GPU or an Apple Silicon Mac.
 
 ```bash
 uv sync --extra eval --group dev
@@ -52,7 +52,7 @@ uv run python scripts/run_eval.py --model qwen25vl-3b --device cuda:0 --limit 5
 uv run python scripts/score_eval.py outputs/qwen25vl-3b/core_limit5.jsonl --show 2
 ```
 
-See docs/RUNNING.md for setup on Windows and for long runs, and docs/EVAL.md for
+See docs/RUNNING.md for setup on macOS (Apple Silicon) or Windows and for long runs, and docs/EVAL.md for
 the probes and metrics.
 
 ## Data sources and licenses
