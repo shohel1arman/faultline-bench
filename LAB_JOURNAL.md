@@ -117,3 +117,25 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
 
 **Next**
 - Mac: setup check, dataset build, cell table, 5-record smoke test with internvl3-2b.
+
+**First real build (Mac mini, GQA val, 10,696 images)**
+- 4,033 records, all valid. Seven of nine conflict cells full (400 + 60). Problems:
+  object S3 got 77 of 460 although 1,705 candidates existed; object controls 0,
+  relation controls 122 of 154.
+- Cause: the cell-by-cell greedy fill. Object S1/S2 (far edit) and S3 (near edit) come
+  from the same 1,705 objects, and relation cells draw on a superset of them, so cells
+  filled first used up objects that later cells (object S3, controls) needed.
+- Real limit underneath: object and relation samples both need an anchor; 2,915 objects
+  qualify, and object + relation quotas ask for 3,068. Main quotas alone need 2,668.
+
+**Fix**
+- Replaced the greedy fill with a max-min fair allocation using augmenting paths (main
+  quotas first, then reserves; random main/reserve split). On synthetic data with the
+  same overlap structure it assigns the same total as the greedy but spreads shortages
+  evenly (greedy left attribute S2 at 18 of 400 and controls at 0; the new allocation
+  gives every cell about 65%). With enough supply both fill everything.
+- Build report now lists distinct objects per type and the object + relation demand.
+- 42 tests, including allocation validity, even spreading under shortage, main before
+  reserve, and identical output across Python hash seeds.
+- Expected on the real data: all main cells and controls full; object and relation
+  reserves somewhat below 60. To be confirmed by rerunning the build on the Mac.

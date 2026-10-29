@@ -136,3 +136,73 @@ def test_color_distractors_are_not_close_to_the_true_color():
         distractors = set(r["mcq_options"]) - {r["answer_image"], r["foil"]}
         assert len(distractors) == 2
         assert not distractors & set(vocab.NEAR_COLORS[r["answer_image"]])
+
+
+def _alloc(n_scenes, per_cell, controls, cap=9, reserve=0):
+    from faultline.generate import assign, image_candidates
+    graphs = random_scenes(n_scenes, seed=11)
+    rng = random.Random(1)
+    cands = []
+    for iid in sorted(graphs):
+        cands.extend(image_candidates(iid, graphs[iid], config(), rng))
+    cfg = config(per_cell=per_cell, reserve_per_cell=reserve, controls=controls,
+                 reserve_controls=0, core_per_cell=1, core_controls=3, max_per_image=cap)
+    return assign(cands, cfg, random.Random(5))
+
+
+def _check_valid(picked, cap):
+    targets, images = Counter(), Counter()
+    for cell, (main, reserve) in picked.items():
+        for c in main + reserve:
+            targets[(c["image_id"], c["target"].oid)] += 1
+            images[c["image_id"]] += 1
+            if cell[1] == "control":
+                assert c["type"] == cell[0]
+            else:
+                assert (c["type"], c["severity"]) == cell
+    assert max(targets.values()) == 1
+    assert max(images.values()) <= cap
+
+
+def test_allocation_fills_every_cell_when_quotas_fit():
+    picked = _alloc(800, per_cell=180, controls=150)
+    _check_valid(picked, 9)
+    for cell, (main, _) in picked.items():
+        if cell != ("relation", "S1"):          # this cell has only ~175 candidates here
+            assert len(main) == (50 if cell[1] == "control" else 180), cell
+
+
+def test_allocation_spreads_a_shortage_evenly():
+    # object S2 and S3 come from the same objects, which relation cells also want; a
+    # cell-by-cell greedy fill left attribute S2 and all controls nearly empty here
+    picked = _alloc(800, per_cell=400, controls=180)
+    _check_valid(picked, 9)
+    frac = {cell: len(main) / (60 if cell[1] == "control" else 400)
+            for cell, (main, _) in picked.items() if cell != ("relation", "S1")}
+    assert min(frac.values()) > 0.55
+    assert max(frac.values()) - min(frac.values()) < 0.05
+
+
+def test_main_quotas_are_filled_before_reserves():
+    picked = _alloc(800, per_cell=200, controls=150, reserve=200)
+    for cell, (main, reserve) in picked.items():
+        if cell != ("relation", "S1") and reserve:
+            assert len(main) == (50 if cell[1] == "control" else 200), cell
+
+
+def test_build_is_identical_across_hash_seeds(tmp_path):
+    import os
+    import subprocess
+    import sys
+    code = (
+        "import hashlib, json, sys; sys.path[:0] = ['.', 'tests'];"
+        "from faultline.generate import build; from fixtures import config, random_scenes;"
+        "recs, _ = build(random_scenes(300, seed=4), config());"
+        "print(hashlib.sha256(json.dumps(recs, sort_keys=True).encode()).hexdigest())"
+    )
+    digests = set()
+    for seed in ("1", "2", "3"):
+        env = {**os.environ, "PYTHONHASHSEED": seed}
+        out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, check=True)
+        digests.add(out.stdout.strip())
+    assert len(digests) == 1

@@ -239,50 +239,152 @@ def _cell(c):
     return (c["type"], c["severity"])
 
 
+def _target(c):
+    return (c["image_id"], c["target"].oid)
+
+
 def assign(cands, cfg, rng):
-    """Greedy fill of every cell under the per-image cap, scarcest cells first."""
+    """Allocate target objects to cells: each object at most once, at most
+    max_per_image objects per image, and no cell above its quota.
+
+    One object can usually serve several cells (an object with a valid anchor yields
+    object, relation and attribute candidates, and any candidate can be a control of its
+    type), so cells compete for the same objects. Cells grow one sample at a time, always
+    the least-filled cell first. A cell takes a free object if one exists; otherwise an
+    augmenting path moves already-assigned objects between cells to make room, so earlier
+    choices never block later cells. A cell is closed only when no such path exists, in
+    which case it cannot grow without shrinking another cell. When all quotas fit, all
+    cells are filled; when they do not, the shortfall is spread so that the least-filled
+    cell is as full as possible. Main quotas (controls included) are filled before
+    reserves, and the main/reserve split within a cell is random.
+
+    Returns {cell: (main_list, reserve_list)}.
+    """
     q = cfg["quota"]
-    need_conf = q["per_cell"] + q["reserve_per_cell"]
-    n_ctrl_types = len(TYPES)
-    need_ctrl = (q["controls"] + q["reserve_controls"]) // n_ctrl_types
-
-    by_cell = defaultdict(list)
-    for c in cands:
-        by_cell[_cell(c)].append(c)
-    for lst in by_cell.values():
-        rng.shuffle(lst)
-
-    per_image = defaultdict(int)
-    used_targets = set()
-    picked = defaultdict(list)
-
-    def take(c):
-        key = (c["image_id"], c["target"].oid)
-        if per_image[c["image_id"]] >= q["max_per_image"] or key in used_targets:
-            return False
-        per_image[c["image_id"]] += 1
-        used_targets.add(key)
-        return True
-
-    cells = [(t, s) for t in TYPES for s in SEVERITIES]
-    cells.sort(key=lambda k: len(by_cell.get(k, [])) / need_conf)
-    for cell in cells:
-        for c in by_cell.get(cell, []):
-            if len(picked[cell]) >= need_conf:
-                break
-            if take(c):
-                picked[cell].append(c)
-
-    # controls reuse the candidate machinery but render the faithful text
+    cap = q["max_per_image"]
+    main_need = {(t, s): q["per_cell"] for t in TYPES for s in SEVERITIES}
+    full_need = {(t, s): q["per_cell"] + q["reserve_per_cell"] for t in TYPES for s in SEVERITIES}
     for t in TYPES:
-        pool = [c for s in SEVERITIES for c in by_cell.get((t, s), [])]
-        rng.shuffle(pool)
-        for c in pool:
-            if len(picked[(t, "control")]) >= need_ctrl:
+        main_need[(t, "control")] = q["controls"] // len(TYPES)
+        full_need[(t, "control")] = (q["controls"] + q["reserve_controls"]) // len(TYPES)
+    cells = list(full_need)
+
+    # one candidate per (cell, object); a control uses the first candidate of its type
+    cand = {}
+    for c in cands:
+        for cell in (_cell(c), (c["type"], "control")):
+            if cell in full_need:
+                cand.setdefault((cell, _target(c)), c)
+    eligible = defaultdict(list)
+    n_cells_of = defaultdict(int)
+    in_image = defaultdict(list)
+    for cell, t in cand:
+        eligible[cell].append(t)
+        n_cells_of[t] += 1
+    for t in n_cells_of:
+        in_image[t[0]].append(t)
+    for cell in cells:
+        rng.shuffle(eligible[cell])
+
+    where = {}                                  # object -> cell
+    members = {cell: {} for cell in cells}      # cell -> ordered set of objects
+    img_count = defaultdict(int)
+
+    # objects ordered least flexible last, so pop() prefers objects with fewer other uses
+    free = {cell: sorted(eligible[cell], key=lambda t: n_cells_of[t], reverse=True) for cell in cells}
+
+    def free_target(cell):
+        lst = free[cell]
+        while lst:
+            t = lst[-1]
+            if t not in where and img_count[t[0]] < cap:
+                return t
+            lst.pop()                            # never usable again: assigned or image full
+        return None
+
+    def put(t, cell):
+        where[t] = cell
+        members[cell][t] = None
+        img_count[t[0]] += 1
+
+    def take_out(t):
+        cell = where.pop(t)
+        del members[cell][t]
+        img_count[t[0]] -= 1
+
+    def augment(k):
+        """Add one object to cell k, rearranging other cells without shrinking them."""
+        t = free_target(k)
+        if t is not None:
+            put(t, k)
+            return True
+        parent = {k: None}
+        touched = set()
+        queue = [k]
+        while queue:
+            x = queue.pop(0)
+            if x != k:
+                t = free_target(x)
+                if t is not None:
+                    put(t, x)
+                    cur = x
+                    while parent[cur] is not None:
+                        px, move = parent[cur]
+                        if move[0] == "move":
+                            take_out(move[1])
+                            put(move[1], px)
+                        else:                    # swap: a free object in a full image replaces u
+                            take_out(move[2])
+                            put(move[1], px)
+                        cur = px
+                    return True
+            for t in eligible[x]:
+                if t in touched or where.get(t) == x:
+                    continue
+                y = where.get(t)
+                if y is not None:
+                    if y not in parent:
+                        parent[y] = (x, ("move", t))
+                        touched.add(t)
+                        queue.append(y)
+                elif img_count[t[0]] >= cap:
+                    for u in in_image[t[0]]:
+                        y = where.get(u)
+                        if y is not None and y != x and y not in parent and u not in touched:
+                            parent[y] = (x, ("swap", t, u))
+                            touched.update((t, u))
+                            queue.append(y)
+                            break
+        return False
+
+    closed = set()
+    for need in (main_need, full_need):
+        while True:
+            open_cells = [k for k in cells if k not in closed and len(members[k]) < need[k]]
+            if not open_cells:
                 break
-            if take(c):
-                picked[(t, "control")].append(c)
-    return picked
+            k = min(open_cells, key=lambda c: (len(members[c]) / need[c], c))
+            if not augment(k):
+                closed.add(k)
+
+    out = {}
+    for cell in cells:
+        chosen = [cand[(cell, t)] for t in sorted(members[cell])]
+        rng.shuffle(chosen)
+        n_main = min(len(chosen), main_need[cell])
+        if chosen:
+            out[cell] = (chosen[:n_main], chosen[n_main:])
+    return out
+
+
+def target_supply(cands):
+    """Distinct target objects available per conflict type, and for object or relation."""
+    per_type = defaultdict(set)
+    for c in cands:
+        per_type[c["type"]].add(_target(c))
+    out = {(t, "targets"): len(per_type[t]) for t in TYPES}
+    out[("object_or_relation", "targets")] = len(per_type["object"] | per_type["relation"])
+    return out
 
 
 def build(scene_graphs, cfg, image_meta=None, limit_images=None):
@@ -298,20 +400,19 @@ def build(scene_graphs, cfg, image_meta=None, limit_images=None):
     supply = defaultdict(int)
     for c in cands:
         supply[_cell(c)] += 1
+    supply.update(target_supply(cands))
 
     picked = assign(cands, cfg, rng)
 
     records = []
-    per_ctrl_main = q["controls"] // len(TYPES)
     per_ctrl_core = q["core_controls"] // len(TYPES)
-    for cell, lst in sorted(picked.items()):
+    for cell, (main, reserve) in sorted(picked.items()):
         is_ctrl = cell[1] == "control"
-        n_main = per_ctrl_main if is_ctrl else q["per_cell"]
         n_core = per_ctrl_core if is_ctrl else q["core_per_cell"]
-        for i, c in enumerate(lst):
+        for i, c in enumerate(main + reserve):
             rec = render(c, conflict=not is_ctrl, rng=rng)
-            rec["split"] = "main" if i < n_main else "reserve"
-            rec["core"] = i < n_core
+            rec["split"] = "main" if i < len(main) else "reserve"
+            rec["core"] = i < min(n_core, len(main))
             meta = (image_meta or {}).get(c["image_id"], {})
             rec["coco_id"] = meta.get("coco_id")
             rec["image_url"] = meta.get("url")

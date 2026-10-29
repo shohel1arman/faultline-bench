@@ -83,12 +83,24 @@ on clean input is measurable.
 
 ## Sampling
 
-All valid candidates are collected per image, shuffled with a fixed seed, and assigned to
-the nine type x severity cells, scarcest cell first. Each image contributes at most two
-samples and each target object at most one. Per cell: 400 main + 60 reserve (reserves
-replace items rejected during human verification). Controls: 402 main (134 per question
-type) + 60 reserve. A stratified **core** subset (200 per cell + 201 controls, 2,001 items)
-is evaluated for every model; the full set is evaluated where compute allows.
+All valid candidate edits are collected per image. Each target object is used at most
+once and each image contributes at most two samples. Quotas per cell: 400 main + 60
+reserve (reserves replace items rejected during human verification); controls: 134 main
++ 20 reserve per question type.
+
+One object usually qualifies for several cells. An object with a valid anchor yields an
+object edit (far or near), a relation edit and often a colour edit, and any of these can
+instead be rendered as a control. The cells therefore compete for the same objects, and
+object/relation cells are the scarce ones because both need an anchor. Assignment is a
+max-min fair allocation: cells grow one sample at a time, least-filled cell first; a
+cell takes a free object if one exists, otherwise an augmenting path moves assigned
+objects between cells to make room. A cell stops only when it cannot grow without
+shrinking another. If all quotas fit, all are filled; if not, the least-filled cell is
+as full as possible. Main quotas (controls included) are filled before reserves, and
+within a cell the main/reserve split and the core subset are random.
+
+A stratified **core** subset (200 per cell + 67 controls per question type, 2,001 items)
+is evaluated for every model; the full main set is evaluated where compute allows.
 
 ## Record fields
 

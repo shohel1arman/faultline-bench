@@ -35,9 +35,19 @@ def report(records, supply, cfg):
                 short.append((t, s, len(rows), need))
     ctrl = [r for r in records if not r["is_conflict"]]
     by = Counter((r["question_type"], r["split"]) for r in ctrl)
+    need_ctrl = (q["controls"] + q["reserve_controls"]) // len(TYPES)
     for t in TYPES:
+        n = by[(t, "main")] + by[(t, "reserve")]
         print(f"{'control ' + t:<16}{'':>8}{by[(t, 'main')]:>7}{by[(t, 'reserve')]:>9}"
               f"{sum(r['core'] for r in ctrl if r['question_type'] == t):>6}")
+        if n < need_ctrl:
+            short.append((t, "control", n, need_ctrl))
+    print("\ndistinct target objects available (each object is used at most once):")
+    for t in TYPES:
+        print(f"  {t:<20}{supply.get((t, 'targets'), 0):>6}")
+    print(f"  {'object or relation':<20}{supply.get(('object_or_relation', 'targets'), 0):>6}")
+    n_obj_rel = 2 * (len(SEVERITIES) * need + need_ctrl)
+    print(f"  object + relation samples requested: {n_obj_rel}")
     imgs = len({r["image_id"] for r in records})
     print(f"\nrecords {len(records)}  images {imgs}  "
           f"core {sum(r['core'] for r in records)}  "
