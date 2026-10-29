@@ -1,0 +1,98 @@
+{
+  "records": 4062,
+  "supply": {
+    "relation_S2": 1523,
+    "object_S1": 717,
+    "object_S3": 1705,
+    "relation_S1": 891,
+    "attribute_S2": 1727,
+    "attribute_S3": 3729,
+    "attribute_S1": 2159,
+    "relation_S3": 501,
+    "object_S2": 988,
+    "object_targets": 1705,
+    "attribute_targets": 3886,
+    "relation_targets": 2915,
+    "object_or_relation_targets": 2915
+  },
+  "shortfalls": [
+    [
+      "object",
+      "S1",
+      379,
+      460
+    ],
+    [
+      "object",
+      "S2",
+      379,
+      460
+    ],
+    [
+      "object",
+      "S3",
+      379,
+      460
+    ],
+    [
+      "relation",
+      "S1",
+      379,
+      460
+    ],
+    [
+      "relation",
+      "S2",
+      379,
+      460
+    ],
+    [
+      "relation",
+      "S3",
+      379,
+      460
+    ],
+    [
+      "object",
+      "control",
+      127,
+      154
+    ],
+    [
+      "relation",
+      "control",
+      127,
+      154
+    ]
+  ],
+  "config": {
+    "seed": 20261014,
+    "version": "v0",
+    "output": "data/faultline_v0.jsonl",
+    "scene_graphs": "data/raw/val_sceneGraphs.json",
+    "image_data": "data/raw/image_data.json",
+    "quota": {
+      "per_cell": 400,
+      "reserve_per_cell": 60,
+      "controls": 402,
+      "reserve_controls": 60,
+      "core_per_cell": 200,
+      "core_controls": 201,
+      "max_per_image": 2
+    },
+    "target": {
+      "min_area": 0.02,
+      "anchor_min_area": 0.01
+    },
+    "severity": {
+      "salient_area": 0.1
+    },
+    "relation": {
+      "min_gap": 0.02,
+      "min_overlap": 0.3,
+      "salient_gap": 0.15,
+      "salient_min_area": 0.03,
+      "subtle_gap": 0.06
+    }
+  }
+}
