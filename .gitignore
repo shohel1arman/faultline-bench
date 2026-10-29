@@ -30,3 +30,4 @@ runs/
 
 # local secrets
 .env
+data/preview.html

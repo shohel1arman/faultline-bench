@@ -139,3 +139,17 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   reserve, and identical output across Python hash seeds.
 - Expected on the real data: all main cells and controls full; object and relation
   reserves somewhat below 60. To be confirmed by rerunning the build on the Mac.
+
+**Second build (after the allocation fix)**
+- 4,062 records, 3,044 images. Core subset complete and balanced: 200 per cell and 67
+  controls per question type (2,001 items). Attribute cells full (400 + 60).
+- Object and relation cells reach 379 main each, controls 127, no reserves. The limit is
+  the two-samples-per-image cap: objects that qualify for object or relation samples are
+  concentrated in the same images.
+- Decision: accept and freeze this build as v0. Every model runs the core set; the main
+  set only adds precision. Reserves are not needed: the 500-item human check estimates
+  the error rate, and wrong items it finds are dropped and reported, not replaced.
+  Not raising the per-image cap to 3 avoids more within-image correlation.
+- The dataset file and its stats are committed so every run uses identical records.
+- Added scripts/preview.py: an HTML page with two samples per cell, image, target and
+  anchor boxes and the edited span, for a manual check before any model runs.
