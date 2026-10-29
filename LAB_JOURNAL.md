@@ -171,3 +171,16 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   consistent with that; not confirmed in PyTorch's own documentation.
 - Fix: pin torch below 2.15 on macOS only; run_eval.py now stops with a clear message if
   torch 2.15+ meets macOS older than 15. The lock file is regenerated on the Mac.
+
+**Second smoke test (InternVL3-2B, torch < 2.15)**
+- Runs end to end on the Apple GPU. About 4 to 6 s per image probe and 0.1 s for the
+  text-only probe, so about 32 s per record: roughly 18 h for the 2,001-record core set.
+- First qualitative signal of the target effect: on an airplane colour conflict the model's
+  detection answer names the error ("the image shows a red airplane") while its open answer
+  follows the text ("blue"), and its structured attribution contradicts its own detection
+  ("Error: no", "Wrong input: image").
+- Dataset problem found: a cow labelled only "white" in the scene graph is black and white
+  in the image, so the colour question had no single right answer. Animal coats are often
+  patterned. Rule added: colours of animals are never edited or stated (attribute targets,
+  relation subjects, filler sentences). The dataset is rebuilt before any full run; the
+  smoke-test outputs are discarded because record ids change.

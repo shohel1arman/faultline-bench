@@ -53,7 +53,11 @@ Each sample changes exactly one span of an otherwise faithful description.
 | object | The bus is to the left of the tree. | target noun replaced by a noun absent from the image | What is to the left of the tree? |
 | relation | The red bus is to the left of the tree. | relation replaced by its antonym | Where is the bus relative to the tree? |
 
-- Attribute edits require exactly one colour on the target.
+- Attribute edits require exactly one colour label on the target, and the target must not
+  be an animal. The same rule decides when a colour may appear anywhere in a description
+  (relation subject, filler sentence). Animal coats are often patterned, so a single
+  scene-graph colour can be false for the image before any edit (a cow labelled only
+  "white" that is black and white); found in the first smoke test.
 - Object replacements must be absent from the image under all their aliases. The target
   colour is dropped from the object template so that implausible combinations (a "red
   elephant") do not reveal the edit from the text alone. Object samples also require that

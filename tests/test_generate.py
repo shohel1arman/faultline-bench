@@ -206,3 +206,27 @@ def test_build_is_identical_across_hash_seeds(tmp_path):
         out = subprocess.run([sys.executable, "-c", code], env=env, capture_output=True, text=True, check=True)
         digests.add(out.stdout.strip())
     assert len(digests) == 1
+
+
+def test_animal_colours_are_never_stated():
+    # a cow labelled only "white" is often black and white: no colour edits, colour
+    # mentions or filler sentences about animals
+    g = street_scene()
+    g["objects"]["7"] = obj("cow", 600, 700, 250, 250, ["white"])
+    g["objects"]["8"] = obj("bench", 50, 650, 300, 200, ["brown"])
+    animals = set(vocab.OBJECT_GROUPS["animal"])
+    for seed in range(30):
+        for c in image_candidates("1", g, config(), random.Random(seed)):
+            if c["type"] == "attribute":
+                assert c["target"].canon not in animals
+            rec = render(c, True, random.Random(seed))
+            for a in animals:
+                for col in vocab.COLORS:
+                    assert f"{col} {a}" not in rec["text"] and f"The {a} is {col}." not in rec["text"]
+
+
+def test_built_dataset_has_no_animal_colour_items():
+    recs, _ = build(random_scenes(600, seed=3), config(per_cell=8, reserve_per_cell=2, controls=12,
+                                                      reserve_controls=3, core_per_cell=5, core_controls=6))
+    animals = set(vocab.OBJECT_GROUPS["animal"])
+    assert not [r for r in recs if r["question_type"] == "attribute" and r["target"]["name"] in animals]

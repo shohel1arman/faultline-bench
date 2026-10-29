@@ -17,6 +17,18 @@ SEVERITIES = ["S1", "S2", "S3"]
 
 # ---------------------------------------------------------------- candidates
 
+def stated_color(obj):
+    """The object's colour if it can be stated reliably, else None.
+
+    Requires exactly one colour label. Animals are excluded: coats are often patterned
+    (a cow labelled only "white" may be black and white), so a single scene-graph colour
+    can be false for the image even before any edit.
+    """
+    if len(obj.colors) != 1 or obj.canon is None or vocab.GROUP_OF[obj.canon] == "animal":
+        return None
+    return obj.colors[0]
+
+
 def _anchors_for(scene, t, cfg):
     rcfg = cfg["relation"]
     out = []
@@ -48,7 +60,7 @@ def _only_target_has_relation(scene, t, a, rel, cfg):
 
 def _filler(scene, used_ids, rng):
     pool = [o for o in scene.objects
-            if o.oid not in used_ids and o.canon and scene.unique_canon(o) and len(o.colors) == 1]
+            if o.oid not in used_ids and o.canon and scene.unique_canon(o) and stated_color(o)]
     return rng.choice(pool) if pool else None
 
 
@@ -74,7 +86,7 @@ def image_candidates(image_id, graph, cfg, rng):
             continue
         anchors = _anchors_for(scene, t, cfg)
         anchor = rng.choice(anchors) if anchors else None
-        color = t.colors[0] if len(t.colors) == 1 else None
+        color = stated_color(t)
         base = {"image_id": scene.image_id, "scene": scene, "target": t,
                 "anchor": anchor[0] if anchor else None,
                 "rel": anchor[1] if anchor else None,
@@ -189,7 +201,7 @@ def render(c, conflict, rng):
 
     used = {c["target"].oid} | ({c["anchor"].oid} if c["anchor"] else set())
     filler = _filler(c["scene"], used, rng)
-    filler_sent = f"The {filler.canon} is {filler.colors[0]}." if filler else None
+    filler_sent = f"The {filler.canon} is {stated_color(filler)}." if filler else None
     filler_first = bool(filler) and rng.random() < 0.5
 
     if filler_first:
