@@ -292,3 +292,19 @@ def test_memory_and_cleanup_on_cpu_device():
     b.device = "cpu"
     assert b.memory_gib() is None
     b.cleanup()
+
+
+def test_missing_image_is_recorded_and_retried(tmp_path, records):
+    rows = select(records, subset="core")[:3]
+    out = tmp_path / "o.jsonl"
+
+    def load(path, max_side):
+        if path.name == rows[1]["image_file"]:
+            raise FileNotFoundError(path)
+        return path
+
+    run(TextFollower(records), rows, "imgs", out, "fake", 672, load, log_every=1000)
+    lines = [json.loads(l) for l in out.read_text(encoding="utf-8").splitlines()]
+    assert [l["id"] for l in lines if l["error"]] == [rows[1]["id"]]
+    assert "FileNotFoundError" in lines[1]["error"]
+    assert done_ids(out) == {rows[0]["id"], rows[2]["id"]}

@@ -86,8 +86,8 @@ def run(backend, records, image_dir, out_path, model_key, max_side, load_image, 
     t_start = time.perf_counter()
     with open(out_path, "a", encoding="utf-8", newline="\n") as f:
         for i, rec in enumerate(todo, 1):
-            image = load_image(Path(image_dir) / rec["image_file"], max_side)
             try:
+                image = load_image(Path(image_dir) / rec["image_file"], max_side)
                 probes = run_record(backend, rec, image)
                 err = None
             except Exception as e:  # keep going; failed records are retried on the next run
