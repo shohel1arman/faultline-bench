@@ -153,3 +153,12 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
 - The dataset file and its stats are committed so every run uses identical records.
 - Added scripts/preview.py: an HTML page with two samples per cell, image, target and
   anchor boxes and the edited span, for a manual check before any model runs.
+
+**Images**
+- Per-image Visual Genome URLs (cs.stanford.edu) refuse connections from the Mac
+  ("Connection refused"), while downloads.cs.stanford.edu works.
+- New default image source: the GQA images.zip on downloads.cs.stanford.edu, which holds
+  the same Visual Genome images named by image id. faultline/remote_zip.py reads the zip
+  index and only the needed members with HTTP range requests (about 0.5 GB instead of the
+  whole archive), checks each member's CRC, and handles Zip64. 6 new tests on in-memory
+  archives; the real server's range support is checked at start-up.
