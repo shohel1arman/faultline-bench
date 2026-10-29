@@ -9,7 +9,8 @@ dependencies = []
 
 [project.optional-dependencies]
 eval = [
-    "torch>=2.6",
+    "torch>=2.6; sys_platform != 'darwin'",
+    "torch>=2.6,<2.15; sys_platform == 'darwin'",
     "torchvision",
     "transformers>=4.57",
     "accelerate",

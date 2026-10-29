@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-from faultline.models import HFBackend, load_image  # noqa: E402
+from faultline.models import HFBackend, load_image, mps_version_problem  # noqa: E402
 from faultline.prompts import PROMPT_VERSION  # noqa: E402
 from faultline.runner import run, select  # noqa: E402
 from faultline.schema import read_jsonl  # noqa: E402
@@ -77,6 +77,11 @@ def main():
         os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
     import torch
     import transformers
+
+    if args.device == "mps":
+        problem = mps_version_problem(torch.__version__, platform.mac_ver()[0])
+        if problem:
+            sys.exit(problem)
 
     meta = {"model": args.model, **cfg, "prompt_version": PROMPT_VERSION,
             "transformers": transformers.__version__, "torch": torch.__version__,

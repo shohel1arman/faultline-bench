@@ -10,6 +10,25 @@ import math
 from .prompts import LETTERS
 
 
+def mps_version_problem(torch_version, macos_version):
+    """Return a message if this torch build is known to fail on this macOS, else None.
+
+    torch 2.15 calls Apple GPU (MPS) functions missing from macOS 14, which aborts the
+    process with "unrecognized selector ... arrayViewWithShape:strides:".
+    """
+    def major_minor(v):
+        parts = (v.split("+")[0].split(".") + ["0", "0"])[:2]
+        return tuple(int("".join(ch for ch in x if ch.isdigit()) or 0) for x in parts)
+
+    if not macos_version:
+        return None
+    if major_minor(torch_version) >= (2, 15) and major_minor(macos_version)[0] < 15:
+        return (f"torch {torch_version} needs macOS 15 or newer on the Apple GPU, but this Mac "
+                f"runs macOS {macos_version}. Run `uv sync --extra eval --group dev` to install "
+                "the torch version pinned for macOS in pyproject.toml.")
+    return None
+
+
 def load_image(path, max_side):
     from PIL import Image
 

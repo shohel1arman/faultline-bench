@@ -308,3 +308,12 @@ def test_missing_image_is_recorded_and_retried(tmp_path, records):
     assert [l["id"] for l in lines if l["error"]] == [rows[1]["id"]]
     assert "FileNotFoundError" in lines[1]["error"]
     assert done_ids(out) == {rows[0]["id"], rows[2]["id"]}
+
+
+def test_mps_version_check():
+    from faultline.models import mps_version_problem
+    assert "macOS 15" in mps_version_problem("2.15.0", "14.6")
+    assert mps_version_problem("2.14.1", "14.6") is None
+    assert mps_version_problem("2.15.0", "15.1") is None
+    assert mps_version_problem("2.16.0.dev20261020", "14.6.1") is not None
+    assert mps_version_problem("2.15.0", "") is None

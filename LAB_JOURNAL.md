@@ -162,3 +162,12 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   index and only the needed members with HTTP range requests (about 0.5 GB instead of the
   whole archive), checks each member's CRC, and handles Zip64. 6 new tests on in-memory
   archives; the real server's range support is checked at start-up.
+
+**First smoke test (InternVL3-2B, Mac mini, macOS 14.6)**
+- Model downloaded and loaded (3.9 GiB on the Apple GPU), then the process aborted in the
+  first linear layer: "-[MPSNDArray arrayViewWithShape:strides:]: unrecognized selector".
+  The installed torch was 2.15.0. The PyTorch 2.14 MPS notes give macOS 14 as the minimum;
+  a secondary report says 2.15 needs macOS 15. The error (a missing Apple GPU function) is
+  consistent with that; not confirmed in PyTorch's own documentation.
+- Fix: pin torch below 2.15 on macOS only; run_eval.py now stops with a clear message if
+  torch 2.15+ meets macOS older than 15. The lock file is regenerated on the Mac.
