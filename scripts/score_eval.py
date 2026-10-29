@@ -21,11 +21,25 @@ from faultline.score import by_cell, outcome, summarize  # noqa: E402
 
 
 def load_outputs(path):
-    """Last successful row per id (a resumed run may contain retries)."""
-    rows = {}
-    for r in read_jsonl(path):
-        if r.get("error") is None and r.get("probes"):
-            rows[r["id"]] = r
+    """Last successful row per id (a resumed run may contain retries).
+
+    Lines that are not valid JSON (a run killed mid-write, or two runs appending to the
+    same file) are skipped and counted.
+    """
+    rows, bad = {}, 0
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                bad += 1
+                continue
+            if r.get("error") is None and r.get("probes"):
+                rows[r["id"]] = r
+    if bad:
+        print(f"skipped {bad} malformed lines in {path}")
     return rows
 
 
