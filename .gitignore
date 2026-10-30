@@ -18,7 +18,12 @@ data/raw/
 data/images/
 
 # model outputs and caches (large; released separately)
-outputs/
+# model outputs: only the final core run files are tracked (canonical, a few MB each)
+outputs/*
+!outputs/*/
+outputs/*/*
+!outputs/*/core.jsonl
+!outputs/*/core.meta.json
 runs/
 *.npz
 *.pt

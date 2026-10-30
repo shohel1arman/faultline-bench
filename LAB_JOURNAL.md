@@ -195,3 +195,13 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
 - If phase 2 does not finish before the deadline, the paper reports the stratified
   1,000-record evaluation, which every model covers identically.
 - All four models now run in float16 on the same Mac, so no precision mix across models.
+
+**Analysis code (while InternVL3-2B runs)**
+- faultline/analysis.py: ratio-of-sums metrics with image-clustered bootstrap intervals,
+  contrasts bootstrapped jointly, exact McNemar tests, joint detect/resolve/attribute
+  patterns, and the common-record intersection across models.
+- scripts/analyze.py writes the CSVs and a LaTeX main table. Checked end to end on two fake
+  models with known behaviour (text follower: 0% detection, resolution and attribution,
+  100% text preference; image follower: 100% and full-chain on every conflict).
+- Final raw outputs (outputs/<model>/core.jsonl and .meta.json) are now tracked in git.
+- 58 tests.

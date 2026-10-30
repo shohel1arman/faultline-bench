@@ -58,3 +58,17 @@ that cannot see the bus is red cannot be blamed for trusting a text that says it
 On RTX 20-series GPUs (no bfloat16) all models run as 4-bit NF4 weights with float16
 compute. The same setting is used for every model so that rows are comparable; a
 quantisation check (NF4 vs float16) on a subset is planned for one model.
+
+## Statistics (`faultline/analysis.py`, `scripts/analyze.py`)
+
+- **Intervals.** 95% percentile bootstrap (2,000 replicates) that resamples images, not
+  records: an image can contribute two records, and record-level resampling would make
+  intervals too narrow. Differences (detection minus false flags, verbalize gain,
+  coupling) are bootstrapped jointly from the same replicates.
+- **Paired comparisons.** Exact two-sided McNemar tests on conflicts for verbalize vs.
+  multiple choice, image-focus instruction vs. multiple choice, and open vs. multiple choice.
+- **Comparable sets.** `--common` restricts every model to the records all models finished;
+  `--first N` restricts to the first N records of the stratified order (phase 1 uses 1,000).
+- **Outputs.** `results/metrics.csv`, `cells.csv`, `joint.csv`, `tests.csv`,
+  `outcomes.jsonl` and `main_table.tex`. The final raw outputs
+  (`outputs/<model>/core.jsonl`) are committed so every number can be recomputed.
