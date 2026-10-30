@@ -55,10 +55,41 @@ def run_record(backend, rec, image):
     return out
 
 
-def select(records, subset=None, shard=None, limit=None):
+def cell_of(rec):
+    if rec["is_conflict"]:
+        return (rec["conflict_type"], rec["severity"])
+    return ("control", rec["question_type"])
+
+
+def stratified_order(records):
+    """Order records so that every prefix is close to proportional across cells.
+
+    Within a cell records keep id order (ids are already a seeded shuffle). Each record
+    gets the position (rank + 0.5) / cell_size and records are sorted by it, so the first
+    N records contain about N * cell_size / total from every cell.
+    """
+    by_cell = {}
+    for r in sorted(records, key=lambda r: r["id"]):
+        by_cell.setdefault(cell_of(r), []).append(r)
+    keyed = []
+    for cell, rows in by_cell.items():
+        for rank, r in enumerate(rows):
+            keyed.append(((rank + 0.5) / len(rows), r["id"], r))
+    keyed.sort(key=lambda x: (x[0], x[1]))
+    return [r for _, _, r in keyed]
+
+
+def select(records, subset=None, shard=None, limit=None, first=None):
+    """Records to evaluate.
+
+    `first` takes the first N records in stratified order. Every model run with the same
+    N covers the same records, and a later run with a larger N extends them.
+    """
     rows = [r for r in records if r["split"] == "main"]
     if subset == "core":
         rows = [r for r in rows if r["core"]]
+    if first:
+        rows = stratified_order(rows)[:first]
     if shard:
         k, n = shard
         rows = [r for i, r in enumerate(rows) if i % n == k]

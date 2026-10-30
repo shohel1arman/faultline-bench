@@ -184,3 +184,14 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   patterned. Rule added: colours of animals are never edited or stated (attribute targets,
   relation subjects, filler sentences). The dataset is rebuilt before any full run; the
   smoke-test outputs are discarded because record ids change.
+
+**Schedule (Mac only; no Windows PC available)**
+- InternVL3-2B runs at about 46 s/record (one process, confirmed): about 26 h for the core
+  set. Four models in sequence on the full core set would end around Nov 5.
+- Added a stratified record order (every prefix is close to proportional across the 12
+  cells) and `--first N`, and scripts/run_queue.py. Phase 1 brings all four models to the
+  same first 1,000 records; phase 2 extends them to all 2,001. Results stay in one file
+  per model, and finished records are always skipped, so the queue can be restarted.
+- If phase 2 does not finish before the deadline, the paper reports the stratified
+  1,000-record evaluation, which every model covers identically.
+- All four models now run in float16 on the same Mac, so no precision mix across models.

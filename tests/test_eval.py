@@ -317,3 +317,20 @@ def test_mps_version_check():
     assert mps_version_problem("2.15.0", "15.1") is None
     assert mps_version_problem("2.16.0.dev20261020", "14.6.1") is not None
     assert mps_version_problem("2.15.0", "") is None
+
+
+def test_stratified_prefixes_are_balanced_and_nested(records):
+    from collections import Counter
+    from faultline.runner import cell_of, stratified_order
+    core = select(records, subset="core")
+    order = stratified_order(core)
+    assert sorted(r["id"] for r in order) == sorted(r["id"] for r in core)
+    sizes = Counter(cell_of(r) for r in core)
+    for n in (len(core) // 4, len(core) // 2):
+        got = Counter(cell_of(r) for r in order[:n])
+        for cell, size in sizes.items():
+            assert abs(got[cell] - n * size / len(core)) <= 1.5, (cell, got[cell], n * size / len(core))
+    half = {r["id"] for r in select(records, subset="core", first=len(core) // 2)}
+    full = {r["id"] for r in select(records, subset="core", first=len(core))}
+    assert half < full and full == {r["id"] for r in core}
+    assert stratified_order(list(reversed(core))) == order

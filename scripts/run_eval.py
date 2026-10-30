@@ -53,6 +53,8 @@ def main():
     ap.add_argument("--device", default="cuda:0")
     ap.add_argument("--limit", type=int)
     ap.add_argument("--shard", help="k/n: run every n-th record starting at k")
+    ap.add_argument("--first", type=int,
+                    help="only the first N records in stratified order (same file as the full run)")
     ap.add_argument("--out")
     args = ap.parse_args()
 
@@ -65,7 +67,8 @@ def main():
         sys.exit(f"{args.models_config} uses quant={cfg['quant']}, which needs CUDA; "
                  "use --models-config configs/models_mac.toml on a Mac")
 
-    records = select(read_jsonl(args.dataset), args.subset, parse_shard(args.shard), args.limit)
+    records = select(read_jsonl(args.dataset), args.subset, parse_shard(args.shard), args.limit,
+                     first=args.first)
     tag = args.subset if not args.limit else f"{args.subset}_limit{args.limit}"
     if args.shard:
         tag += "_shard" + args.shard.replace("/", "of")
@@ -87,7 +90,8 @@ def main():
             "transformers": transformers.__version__, "torch": torch.__version__,
             "gpu": device_name(torch, args.device),
             "platform": platform.platform(), "started": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "dataset": args.dataset, "subset": args.subset, "n_records": len(records)}
+            "dataset": args.dataset, "subset": args.subset, "first": args.first,
+            "n_records": len(records)}
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out.with_suffix(".meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
