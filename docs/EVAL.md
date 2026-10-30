@@ -55,9 +55,10 @@ that cannot see the bus is red cannot be blamed for trusting a text that says it
 
 ## Precision
 
-On RTX 20-series GPUs (no bfloat16) all models run as 4-bit NF4 weights with float16
-compute. The same setting is used for every model so that rows are comparable; a
-quantisation check (NF4 vs float16) on a subset is planned for one model.
+All reported models run on one Apple Silicon Mac (16 GB) on the Apple GPU, in float16
+without quantisation (`configs/models_mac.toml`), so every row uses the same precision.
+The 4-bit NVIDIA profile (`configs/models.toml`) is kept for reproduction on small GPUs
+and is not used for reported results.
 
 ## Statistics (`faultline/analysis.py`, `scripts/analyze.py`)
 
