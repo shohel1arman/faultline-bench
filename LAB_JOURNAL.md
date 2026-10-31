@@ -234,3 +234,10 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   InternVL3-2B gets only the two new probes in an extra pass (outputs/.../extra.jsonl).
 - Queue lock (no second queue can start) and optional Mac auto-resume after restarts.
 - 70 tests.
+
+**Smoke tests of the remaining models (3 records each, float16 on the Apple GPU)**
+- Qwen2.5-VL-3B 7.0 GiB, 19.2 s/record; Qwen3-VL-4B 8.3 GiB, 19.6 s/record;
+  SmolVLM2-2.2B 4.2 GiB, 41.4 s/record. No errors. InternVL3-2B's smoke-test speed
+  underestimated its real speed by about half, so estimates carry a 50% margin.
+- Queue order changed to the two fast Qwen models first, then SmolVLM2, so three models
+  have phase-1 results within about 11 hours.

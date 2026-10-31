@@ -7,6 +7,6 @@ mkdir -p outputs
 echo "=== queue start $(date '+%Y-%m-%d %H:%M:%S')" >> outputs/queue.log
 exec /usr/bin/caffeinate -i uv run python scripts/run_queue.py \
     --device mps --models-config configs/models_mac.toml \
-    --models smolvlm2-2b,qwen25vl-3b,qwen3vl-4b \
+    --models qwen25vl-3b,qwen3vl-4b,smolvlm2-2b \
     --phases 1000,all \
     --extra-models internvl3-2b >> outputs/queue.log 2>&1
