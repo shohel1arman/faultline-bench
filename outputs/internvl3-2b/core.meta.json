@@ -1,0 +1,17 @@
+{
+  "model": "internvl3-2b",
+  "quant": "none",
+  "dtype": "float16",
+  "max_side": 672,
+  "hf_id": "OpenGVLab/InternVL3-2B-hf",
+  "prompt_version": "p1",
+  "transformers": "5.22.0",
+  "torch": "2.14.1",
+  "gpu": "Apple GPU (mps), arm64",
+  "platform": "macOS-14.6-arm64-arm-64bit",
+  "started": "2026-10-31 11:49:40",
+  "dataset": "data/faultline_v0.jsonl",
+  "subset": "core",
+  "first": null,
+  "n_records": 2001
+}
