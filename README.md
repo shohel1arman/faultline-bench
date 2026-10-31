@@ -31,6 +31,7 @@ tests/              unit tests (run on synthetic fixtures, no downloads needed)
 docs/DATASET.md     construction rules, in enough detail to reproduce the data
 docs/EVAL.md        probes, parsing and metrics
 docs/RUNNING.md     environment setup and running long evaluations
+docs/PAPER_NOTES.md results so far, decisions and limitations, for writing the paper
 data/               generated dataset files (raw downloads and images are not tracked)
 LAB_JOURNAL.md      dated record of what was planned, done and found
 ```
