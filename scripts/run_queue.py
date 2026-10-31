@@ -11,12 +11,35 @@ Usage (Mac):
 """
 
 import argparse
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def acquire_lock(path):
+    """Hold an exclusive lock for the life of the process; None if another queue holds it.
+
+    Prevents two queues (for example one started by hand and one by auto-resume) from
+    running the same models at once. Uses fcntl, so the lock only works on macOS/Linux.
+    """
+    try:
+        import fcntl
+    except ImportError:
+        return True
+    path.parent.mkdir(parents=True, exist_ok=True)
+    f = open(path, "w")
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        f.close()
+        return None
+    f.write(str(os.getpid()))
+    f.flush()
+    return f
 
 
 def main():
@@ -28,30 +51,44 @@ def main():
     ap.add_argument("--subset", default="core")
     ap.add_argument("--dataset", default="data/faultline_v0.jsonl")
     ap.add_argument("--images", default="data/images")
+    ap.add_argument("--extra-models", default="",
+                    help="models that get the extra probes added after the first phase")
+    ap.add_argument("--extra-probes", default="delay,check_silent")
     args = ap.parse_args()
+
+    lock = acquire_lock(ROOT / "outputs" / ".queue.lock")
+    if lock is None:
+        print("another queue is already running; not starting a second one")
+        return
 
     models = [m.strip() for m in args.models.split(",") if m.strip()]
     phases = [p.strip() for p in args.phases.split(",") if p.strip()]
+    extra_models = [m.strip() for m in args.extra_models.split(",") if m.strip()]
     results = []
-    for phase in phases:
+
+    def step(label, model, extra_args):
+        cmd = [sys.executable, str(ROOT / "scripts" / "run_eval.py"),
+               "--model", model, "--device", args.device,
+               "--models-config", args.models_config, "--subset", args.subset,
+               "--dataset", args.dataset, "--images", args.images] + extra_args
+        print(f"\n=== {label}: {model}  ({time.strftime('%Y-%m-%d %H:%M')})", flush=True)
+        t0 = time.time()
+        code = subprocess.run(cmd, cwd=ROOT).returncode
+        hours = (time.time() - t0) / 3600
+        results.append((label, model, code, hours))
+        print(f"=== {label}: {model} exited with {code} after {hours:.1f} h", flush=True)
+
+    for k, phase in enumerate(phases):
         for model in models:
-            cmd = [sys.executable, str(ROOT / "scripts" / "run_eval.py"),
-                   "--model", model, "--device", args.device,
-                   "--models-config", args.models_config, "--subset", args.subset,
-                   "--dataset", args.dataset, "--images", args.images]
-            if phase != "all":
-                cmd += ["--first", phase]
-            print(f"\n=== phase {phase}: {model}  ({time.strftime('%Y-%m-%d %H:%M')})", flush=True)
-            t0 = time.time()
-            code = subprocess.run(cmd, cwd=ROOT).returncode
-            hours = (time.time() - t0) / 3600
-            results.append((phase, model, code, hours))
-            print(f"=== phase {phase}: {model} exited with {code} after {hours:.1f} h", flush=True)
+            step(f"phase {phase}", model, [] if phase == "all" else ["--first", phase])
+        if k == 0:
+            for model in extra_models:
+                step("extra probes", model, ["--only-probes", args.extra_probes])
 
     print("\nsummary")
     for phase, model, code, hours in results:
         status = "ok" if code == 0 else f"FAILED ({code})"
-        print(f"  phase {phase:<5} {model:<16} {status:<12} {hours:5.1f} h")
+        print(f"  {phase:<14} {model:<16} {status:<12} {hours:5.1f} h")
 
 
 if __name__ == "__main__":

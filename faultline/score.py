@@ -28,6 +28,8 @@ def outcome(rec, probes):
         "mcq": mcq("mcq"),
         "mcq_focus": mcq("mcq_focus"),
         "verbalize": mcq("verbalize"),
+        "delay": mcq("delay") if "delay" in probes else None,
+        "check_silent": mcq("check_silent") if "check_silent" in probes else None,
         "open": parse.open_answer(probes["open"].get("output"), rec),
         "att_parsed": att["parsed"],
         "att_error": att["error"],

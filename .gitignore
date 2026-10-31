@@ -24,6 +24,8 @@ outputs/*
 outputs/*/*
 !outputs/*/core.jsonl
 !outputs/*/core.meta.json
+!outputs/*/extra.jsonl
+!outputs/*/extra.meta.json
 runs/
 *.npz
 *.pt

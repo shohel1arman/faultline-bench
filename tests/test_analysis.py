@@ -74,3 +74,22 @@ def test_common_ids():
     a = [conflict(i, True) for i in range(5)]
     b = [conflict(i, True) for i in range(3, 8)]
     assert common_ids({"a": a, "b": b}) == {"r3", "r4"}
+
+
+def test_verbalize_gain_decomposes_into_structure_check_and_report():
+    outs = []
+    for i in range(100):
+        o = conflict(i, resolved=i < 10)
+        o["delay"] = "image" if i < 20 else "text"         # +10 from the turn structure
+        o["check_silent"] = "image" if i < 35 else "text"  # +15 from being asked to check
+        o["verbalize"] = "image" if i < 60 else "text"     # +25 from the model's own report
+        outs.append(o)
+    old = conflict(999, resolved=False)                    # a record without the control probes
+    old.update(delay=None, check_silent=None, verbalize="image")
+    b = bootstrap(outs + [old], {o["id"]: o["id"] for o in outs + [old]}, reps=200)
+    assert b["structure_gain"][0] == pytest.approx(0.10)
+    assert b["check_gain"][0] == pytest.approx(0.15)
+    assert b["report_gain"][0] == pytest.approx(0.25)
+    assert b["ResA_mcq_c"][3] == 100                       # the record without controls is left out
+    a_only, b_only, _ = mcnemar(outs + [old], "check_silent", "delay")
+    assert (a_only, b_only) == (15, 0)

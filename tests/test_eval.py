@@ -74,7 +74,8 @@ def load_image_stub(path, max_side):
 def test_probe_turns_shapes(records):
     turns = probe_turns(records[0], image="IMG")
     names = [n for n, *_ in turns]
-    assert names == ["image_only", "text_only", "detect", "open", "mcq", "mcq_focus", "attribute"]
+    assert names == ["image_only", "text_only", "detect", "open", "mcq", "mcq_focus", "attribute",
+                     "delay", "check_silent"]
     by = {n: t for n, _, t, _ in turns}
     assert by["text_only"][0]["image"] is None
     assert by["image_only"][0]["image"] == "IMG"
@@ -161,7 +162,7 @@ def test_run_writes_resumes_and_retries(tmp_path, records):
         f.write('{"id": "fl_trunc')
     fake2 = TextFollower(records)
     run(fake2, rows, "imgs", out, "fake", 672, load_image_stub, log_every=1000)
-    assert fake2.calls == 8
+    assert fake2.calls == 10                      # 9 probes + verbalize, for the one failed record
     assert done_ids(out) == {r["id"] for r in rows}
     for line in out.read_text(encoding="utf-8").splitlines():
         if line.startswith('{"id": "fl_trunc'):
@@ -334,3 +335,93 @@ def test_stratified_prefixes_are_balanced_and_nested(records):
     full = {r["id"] for r in select(records, subset="core", first=len(core))}
     assert half < full and full == {r["id"] for r in core}
     assert stratified_order(list(reversed(core))) == order
+
+
+def test_attribution_accepts_short_obvious_label():
+    # real InternVL3-2B output
+    out = "Error: yes\nWrong input: image\nError type: object\nWrong words: suitcase\nObvious: moderate"
+    a = parse.attribution(out)
+    assert a["obvious"] == "moderate" and a["type"] == "object" and a["input"] == "image"
+    assert parse.attribution("Error type: none\nHow obvious: subtle")["error"] is None
+
+
+@pytest.mark.parametrize("span,expected", [
+    ('"The red car is to the right of the bus." - The red car is actually to the left of the bus.', True),
+    ("to the right of; it should be to the left of", True),
+    ("right (the car is on the left)", True),
+    ("The red car is to the right of the bus, but it is actually to the left", True),
+    ("to the left of", False),
+    ('"left"', False),
+])
+def test_span_ignores_explanations(span, expected):
+    rec = {"is_conflict": True, "question_type": "relation",
+           "answer_text": "to the right of", "answer_image": "to the left of"}
+    assert parse.span_correct(span, rec) is expected
+
+
+def test_span_for_objects_and_colours():
+    obj = {"is_conflict": True, "question_type": "object", "answer_text": "vase", "answer_image": "chair"}
+    assert parse.span_correct("vase", obj)
+    assert parse.span_correct('"The vase is to the right of the table." Instead there is a chair.', obj)
+    col = {"is_conflict": True, "question_type": "attribute", "answer_text": "blue", "answer_image": "red"}
+    assert parse.span_correct("blue - the airplane is red", col)
+    assert not parse.span_correct("red", col)
+
+
+def test_control_probes_share_the_verbalize_structure(records):
+    from faultline.prompts import ACK, verbalize_turns
+    by = {n: t for n, _, t, _ in probe_turns(records[0], image="IMG")}
+    v = verbalize_turns(records[0], "IMG", "Error: yes")
+    for name in ("delay", "check_silent"):
+        t = by[name]
+        assert [x["role"] for x in t] == ["user", "assistant", "user"]
+        assert t[1]["text"] == ACK and t[2]["text"] == v[2]["text"]
+        assert t[0]["image"] == "IMG" and t[2]["image"] is None
+    assert by["check_silent"][0]["text"] == v[0]["text"]
+    assert records[0]["text"] in by["delay"][0]["text"]
+    assert "Check the description" not in by["delay"][0]["text"]
+
+
+def test_only_probes_pass_and_merge(tmp_path, records):
+    import subprocess
+    import sys
+    rows = select(records, subset="core")[:6]
+    base = tmp_path / "out" / "m"
+    fake = TextFollower(records)
+    run(fake, rows, "imgs", base / "core.jsonl", "m", 672, load_image_stub, log_every=1000,
+        only=["image_only", "mcq", "detect", "attribute", "open", "mcq_focus", "text_only", "verbalize"])
+    calls_main = fake.calls
+    run(fake, rows, "imgs", base / "extra.jsonl", "m", 672, load_image_stub, log_every=1000,
+        only=["delay", "check_silent"])
+    assert fake.calls - calls_main == 2 * len(rows)
+    extra = [json.loads(l) for l in (base / "extra.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert all(set(r["probes"]) == {"delay", "check_silent"} for r in extra)
+
+    ds = tmp_path / "ds.jsonl"
+    from faultline.schema import write_jsonl
+    write_jsonl(ds, records)
+    res = tmp_path / "res"
+    out = subprocess.run([sys.executable, "scripts/analyze.py", str(base / "core.jsonl"), "--dataset", str(ds),
+                          "--out", str(res), "--reps", "50"], capture_output=True, text=True, check=True)
+    assert "merged 6 records of extra probes" in out.stdout
+    metrics = {l.split(",")[1]: l.split(",") for l in (res / "metrics.csv").read_text().splitlines()[1:]}
+    # the text follower answers from the text in every condition: no gains anywhere
+    for name in ("ResA_delay", "ResA_check", "ResA_verbalize_c", "structure_gain", "check_gain", "report_gain"):
+        assert float(metrics[name][2]) == 0.0, name
+
+
+def test_queue_lock_blocks_a_second_queue(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("run_queue", "scripts/run_queue.py")
+    rq = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rq)
+    first = rq.acquire_lock(tmp_path / "q.lock")
+    assert first
+    import subprocess
+    import sys
+    code = ("import importlib.util,sys,pathlib; s=importlib.util.spec_from_file_location('q','scripts/run_queue.py');"
+            "m=importlib.util.module_from_spec(s); s.loader.exec_module(m);"
+            f"print(m.acquire_lock(pathlib.Path(r'{tmp_path / 'q.lock'}')) is None)")
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    assert out.stdout.strip() == "True"
+    first.close()

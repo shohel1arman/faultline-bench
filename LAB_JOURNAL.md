@@ -205,3 +205,32 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   100% text preference; image follower: 100% and full-chain on every conflict).
 - Final raw outputs (outputs/<model>/core.jsonl and .meta.json) are now tracked in git.
 - 58 tests.
+
+## 2026-10-31
+
+**Done**
+- InternVL3-2B finished all 2,001 core records (about 51 s/record). The Mac restarted three
+  times today (10:36, 11:45, 23:21); no panic reports and no recorded shutdown cause, which
+  fits power interruptions. Finished records were never lost.
+- First results, InternVL3-2B (1,800 conflicts, 201 controls; 95% image-clustered CIs):
+  perceives the fact from the image alone 73.7% [71.5, 75.7]; flags the conflict 71.1%
+  with 19.9% false flags on controls (adjusted 51.2% [45.2, 56.5]); answers from the image
+  only 16.4% [14.7, 18.2] and from the text 82.6%; 21.9% even on records it perceives
+  correctly. 56% of conflicts are detected yet answered from the text. Controls: 100%
+  correct. Verbalize-then-answer: 52.7% (+36.3 points; 672 vs 19 discordant records).
+- Parser problems found on real outputs and fixed (scoring only, no rerun): the model
+  often writes "Obvious:" instead of "How obvious:" (1,000 severity answers were missed);
+  span scoring counted the explanation after the named words. After the fix: wrong words
+  located 72.1%, error type 40.1%, wrong input 19.4% (usually answers "image" while naming
+  the text's words), severity 20.4%; all four correct 0.8%.
+- Strict attribution is too rare (14 records) to condition on, so attribution-resolution
+  coupling is measured with span localisation (R | span correct vs not), reported with
+  the strict version.
+- Confound in the verbalize probe: it differs from plain multiple choice in three ways
+  (question in a later turn, a prompt to check for errors, the model's own report). Added
+  two control probes with the same turn structure and a neutral "OK." reply: `delay`
+  (description only) and `check_silent` (the check prompt). The gain now splits into
+  structure, checking and report effects. Prompt version p1.1; earlier probes unchanged.
+  InternVL3-2B gets only the two new probes in an extra pass (outputs/.../extra.jsonl).
+- Queue lock (no second queue can start) and optional Mac auto-resume after restarts.
+- 70 tests.

@@ -111,7 +111,7 @@ FIELDS = {
     "input": r"wrong input",
     "type": r"error type",
     "span": r"wrong words",
-    "obvious": r"how obvious",
+    "obvious": r"(?:how\s+)?obvious",       # models often shorten the label to "Obvious:"
 }
 
 TYPE_WORDS = {
@@ -158,9 +158,30 @@ def attribution(output):
     }
 
 
+_QUOTED = re.compile(r'["\u201c\u2018\']([^"\u201d\u2019\']+)["\u201d\u2019\']')
+_EXPLAIN = re.compile(r"\s(?:-|\u2013|\u2014)\s|;|\(|\b(?:should|actually|instead|but|while|whereas|correct)\b",
+                      re.I)
+
+
+def named_span(span):
+    """The words a model names as wrong, without the explanation that often follows.
+
+    '"The red car is to the right of the bus." - The red car is actually to the left'
+    names the first sentence; the explanation mentions the true value and must not count.
+    Takes the first quoted segment if there is one, else the text before the first
+    explanation marker.
+    """
+    if not span:
+        return ""
+    m = _QUOTED.search(span)
+    if m:
+        return m.group(1)
+    return _EXPLAIN.split(span, maxsplit=1)[0]
+
+
 def span_correct(span, rec):
     """The named wrong words identify the edited value and not the true one."""
     if not span or not rec["is_conflict"]:
         return False
-    hits = mentioned(span, rec["question_type"])
+    hits = mentioned(named_span(span), rec["question_type"])
     return rec["answer_text"] in hits and rec["answer_image"] not in hits

@@ -81,6 +81,14 @@ def main():
     by_model = {}
     for path in paths:
         rows, bad = load_outputs(path)
+        extra = Path(path).with_name("extra.jsonl")
+        if extra.exists():                       # probes added later to a finished run
+            more, bad_more = load_outputs(extra)
+            bad += bad_more
+            for i, r in more.items():
+                if i in rows:
+                    rows[i]["probes"] = {**rows[i]["probes"], **r["probes"]}
+            print(f"merged {len(more)} records of extra probes from {extra}")
         model = next(iter(rows.values()))["model"] if rows else Path(path).parent.name
         outs = [outcome(recs[i], r["probes"]) for i, r in rows.items() if keep is None or i in keep]
         for o in outs:
@@ -131,7 +139,8 @@ def main():
         w = csv.writer(f, lineterminator="\n")
         w.writerow(["model", "probe_a", "probe_b", "a_only", "b_only", "p_value"])
         for model, outs in by_model.items():
-            for a, b in (("verbalize", "mcq"), ("mcq_focus", "mcq"), ("open", "mcq")):
+            for a, b in (("verbalize", "mcq"), ("mcq_focus", "mcq"), ("open", "mcq"),
+                         ("delay", "mcq"), ("check_silent", "delay"), ("verbalize", "check_silent")):
                 a_only, b_only, p = mcnemar(outs, a, b)
                 w.writerow([model, a, b, a_only, b_only, p])
 

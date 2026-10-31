@@ -32,9 +32,12 @@ def done_ids(path):
     return ids
 
 
-def run_record(backend, rec, image):
+def run_record(backend, rec, image, only=None):
+    """All probes for one record, or only the named ones (used to add probes to a finished run)."""
     out = {}
     for name, kind, turns, max_new in probe_turns(rec, image):
+        if only and name not in only:
+            continue
         t0 = time.perf_counter()
         if kind == "gen":
             res = backend.generate(turns, max_new)
@@ -43,11 +46,12 @@ def run_record(backend, rec, image):
         res["sec"] = round(time.perf_counter() - t0, 3)
         out[name] = res
 
-    attr = out["attribute"].get("output", "")
-    t0 = time.perf_counter()
-    res = backend.letter_probs(verbalize_turns(rec, image, attr))
-    res["sec"] = round(time.perf_counter() - t0, 3)
-    out["verbalize"] = res
+    if not only or "verbalize" in only:
+        attr = out["attribute"].get("output", "")
+        t0 = time.perf_counter()
+        res = backend.letter_probs(verbalize_turns(rec, image, attr))
+        res["sec"] = round(time.perf_counter() - t0, 3)
+        out["verbalize"] = res
 
     for res in out.values():
         if "probs" in res:
@@ -98,7 +102,8 @@ def select(records, subset=None, shard=None, limit=None, first=None):
     return rows
 
 
-def run(backend, records, image_dir, out_path, model_key, max_side, load_image, log_every=10):
+def run(backend, records, image_dir, out_path, model_key, max_side, load_image, log_every=10,
+        only=None):
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     skip = done_ids(out_path)
@@ -119,7 +124,7 @@ def run(backend, records, image_dir, out_path, model_key, max_side, load_image, 
         for i, rec in enumerate(todo, 1):
             try:
                 image = load_image(Path(image_dir) / rec["image_file"], max_side)
-                probes = run_record(backend, rec, image)
+                probes = run_record(backend, rec, image, only=only)
                 err = None
             except Exception as e:  # keep going; failed records are retried on the next run
                 probes, err = None, f"{type(e).__name__}: {e}"

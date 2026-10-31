@@ -10,6 +10,10 @@ import math
 import random
 from collections import defaultdict
 
+def _has_controls(o):
+    return o["is_conflict"] and o.get("delay") is not None and o.get("check_silent") is not None
+
+
 # name -> (numerator(o), denominator(o)); o is a per-record outcome from score.outcome
 METRICS = {
     "perceive": (lambda o: o["perceives"], lambda o: o["is_conflict"]),
@@ -38,6 +42,15 @@ METRICS = {
     "R_given_D": (lambda o: o["mcq"] == "image", lambda o: o["is_conflict"] and o["flagged"]),
     "R_given_notD": (lambda o: o["mcq"] == "image",
                      lambda o: o["is_conflict"] and not o["flagged"]),
+    "R_given_S": (lambda o: o["mcq"] == "image",
+                  lambda o: o["is_conflict"] and o.get("a_span", False)),
+    "R_given_notS": (lambda o: o["mcq"] == "image",
+                     lambda o: o["is_conflict"] and not o.get("a_span", False)),
+    # verbalize decomposition, on conflicts that have the two control probes
+    "ResA_mcq_c": (lambda o: o["mcq"] == "image", lambda o: _has_controls(o)),
+    "ResA_delay": (lambda o: o["delay"] == "image", lambda o: _has_controls(o)),
+    "ResA_check": (lambda o: o["check_silent"] == "image", lambda o: _has_controls(o)),
+    "ResA_verbalize_c": (lambda o: o["verbalize"] == "image", lambda o: _has_controls(o)),
     "control_acc_mcq": (lambda o: o["mcq"] == "image", lambda o: not o["is_conflict"]),
     "control_foil_mcq": (lambda o: o["mcq"] == "foil", lambda o: not o["is_conflict"]),
     "unparsed_detect": (lambda o: o["detect"] is None, lambda o: True),
@@ -51,6 +64,10 @@ CONTRASTS = {
     "focus_gain": ("ResA_focus", "ResA_mcq"),
     "coupling_A": ("R_given_A", "R_given_notA"),
     "coupling_D": ("R_given_D", "R_given_notD"),
+    "coupling_S": ("R_given_S", "R_given_notS"),
+    "structure_gain": ("ResA_delay", "ResA_mcq_c"),        # question in a later turn
+    "check_gain": ("ResA_check", "ResA_delay"),            # being asked to check for errors
+    "report_gain": ("ResA_verbalize_c", "ResA_check"),     # the model's own error report
     "detect_minus_resolve": ("DetR", "ResA_mcq"),
 }
 
@@ -115,7 +132,7 @@ def mcnemar(outcomes, a, b):
     Returns (n_a_only, n_b_only, p_value), where *_only counts records resolved to the
     image by one probe and not the other.
     """
-    conf = [o for o in outcomes if o["is_conflict"]]
+    conf = [o for o in outcomes if o["is_conflict"] and o.get(a) is not None and o.get(b) is not None]
     a_only = sum(1 for o in conf if o[a] == "image" and o[b] != "image")
     b_only = sum(1 for o in conf if o[b] == "image" and o[a] != "image")
     n = a_only + b_only

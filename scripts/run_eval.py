@@ -55,6 +55,8 @@ def main():
     ap.add_argument("--shard", help="k/n: run every n-th record starting at k")
     ap.add_argument("--first", type=int,
                     help="only the first N records in stratified order (same file as the full run)")
+    ap.add_argument("--only-probes",
+                    help="comma-separated probe names; writes outputs/<model>/extra.jsonl by default")
     ap.add_argument("--out")
     args = ap.parse_args()
 
@@ -72,6 +74,9 @@ def main():
     tag = args.subset if not args.limit else f"{args.subset}_limit{args.limit}"
     if args.shard:
         tag += "_shard" + args.shard.replace("/", "of")
+    only = [p.strip() for p in args.only_probes.split(",")] if args.only_probes else None
+    if only and not args.out:
+        tag = "extra" if not args.limit else f"extra_limit{args.limit}"
     out = Path(args.out or f"outputs/{args.model}/{tag}.jsonl")
 
     if args.device == "mps":
@@ -90,7 +95,7 @@ def main():
             "transformers": transformers.__version__, "torch": torch.__version__,
             "gpu": device_name(torch, args.device),
             "platform": platform.platform(), "started": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "dataset": args.dataset, "subset": args.subset, "first": args.first,
+            "dataset": args.dataset, "subset": args.subset, "first": args.first, "only_probes": only,
             "n_records": len(records)}
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out.with_suffix(".meta.json"), "w", encoding="utf-8") as f:
@@ -103,7 +108,7 @@ def main():
     mem_txt = f"; gpu memory {mem:.2f} GiB" if mem is not None else ""
     print(f"loaded in {time.perf_counter() - t0:.0f}s{mem_txt}")
 
-    run(backend, records, args.images, out, args.model, cfg["max_side"], load_image)
+    run(backend, records, args.images, out, args.model, cfg["max_side"], load_image, only=only)
 
 
 if __name__ == "__main__":

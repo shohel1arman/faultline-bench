@@ -1,6 +1,6 @@
 """Probe prompts. Any change here changes results, so bump PROMPT_VERSION when editing."""
 
-PROMPT_VERSION = "p1"
+PROMPT_VERSION = "p1.1"  # p1 plus the delay and check_silent control probes
 
 LETTERS = ["A", "B", "C", "D"]
 
@@ -15,6 +15,11 @@ DETECT = (
 OPEN = 'Description: "{text}"\n{question} Answer with a single word or short phrase.'
 
 FOCUS = "If the description conflicts with the image, rely on the image."
+
+# Controls for the verbalize probe: same turn structure, but the assistant turn is a
+# neutral acknowledgement instead of the model's own error report.
+DELAY = 'Here is a description of the image: "{text}"'
+ACK = "OK."
 
 ATTRIBUTE = (
     'Here is a description of the image: "{text}"\n'
@@ -48,7 +53,8 @@ def probe_turns(rec, image):
 
     kind is "gen" (free generation) or "mcq" (letter scoring). turns is a list of
     {"role", "text", "image"}; the image is attached to the first user turn only.
-    P4 ("verbalize") depends on the attribution output and is built separately.
+    P4 ("verbalize") depends on the attribution output and is built separately;
+    "delay" and "check_silent" share its turn structure with a neutral reply instead.
     """
     text, q, opts = rec["text"], rec["question"], rec["mcq_options"]
     user = lambda t, img=image: [{"role": "user", "text": t, "image": img}]
@@ -60,12 +66,19 @@ def probe_turns(rec, image):
         ("mcq", "mcq", user(mcq(q, opts, text=text)), None),
         ("mcq_focus", "mcq", user(mcq(q, opts, text=text, focus=True)), None),
         ("attribute", "gen", user(ATTRIBUTE.format(text=text)), 80),
+        ("delay", "mcq", followup_turns(rec, image, DELAY.format(text=text), ACK), None),
+        ("check_silent", "mcq", followup_turns(rec, image, ATTRIBUTE.format(text=text), ACK), None),
+    ]
+
+
+def followup_turns(rec, image, first_prompt, reply):
+    """Image and first prompt, an assistant reply, then the bare multiple-choice question."""
+    return [
+        {"role": "user", "text": first_prompt, "image": image},
+        {"role": "assistant", "text": reply, "image": None},
+        {"role": "user", "text": mcq(rec["question"], rec["mcq_options"]), "image": None},
     ]
 
 
 def verbalize_turns(rec, image, attribution_output):
-    return [
-        {"role": "user", "text": ATTRIBUTE.format(text=rec["text"]), "image": image},
-        {"role": "assistant", "text": attribution_output, "image": None},
-        {"role": "user", "text": mcq(rec["question"], rec["mcq_options"]), "image": None},
-    ]
+    return followup_turns(rec, image, ATTRIBUTE.format(text=rec["text"]), attribution_output)
