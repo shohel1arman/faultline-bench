@@ -241,3 +241,28 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   underestimated its real speed by about half, so estimates carry a 50% margin.
 - Queue order changed to the two fast Qwen models first, then SmolVLM2, so three models
   have phase-1 results within about 11 hours.
+
+## 2026-11-01 to 2026-11-02
+
+**Mac queue, phase 1 finished**
+- First 1,000 records done for Qwen2.5-VL-3B (17.3 s/record, 4.8 h), Qwen3-VL-4B
+  (18.2 s/record, 5.1 h) and SmolVLM2-2.2B (46.4 s/record, 12.9 h). All exited cleanly.
+- InternVL3-2B control probes (delay, check_silent) running at 12.1 s/record; phase 2 for
+  the other three models follows automatically. Expected end: Nov 3, about 05:00.
+
+**Decision: all reported results move to an NVIDIA DGX Spark**
+- A DGX Spark (GB10, 128 GB unified memory, 273 GB/s) is available from Nov 2. It holds
+  32B models in bfloat16 without quantisation, which the 16 GB Mac cannot.
+- Every reported model runs there in bfloat16, so the main table uses one platform and
+  one precision. The four small models are rerun there too. The Mac float16 runs become
+  a cross-platform agreement check, not table rows. All profiles keep 672 px images.
+- Models (11): Qwen3-VL 2B/4B/8B/32B and 30B-A3B as a scaling ladder within one family;
+  Qwen2.5-VL 3B/7B/32B; InternVL3 2B/8B; SmolVLM2 2.2B. InternVL3-38B dropped for time;
+  72B models do not fit in bfloat16. Repository names checked on Hugging Face.
+- Time estimate (from memory bandwidth and the measured share of generated tokens; not
+  measured): small models 2-4x faster than the Mac; 7-8B models 5-8 h; 32B models 20-33 h
+  each; whole queue 3.5-5.5 days. Run order puts the 32B models last so they can be cut.
+- Spark outputs go to outputs/spark/<model>/ (new --out-root option) so they never mix
+  with the Mac files. New: configs/models_spark.toml, scripts/spark/queue.sh,
+  scripts/prefetch_models.py (downloads weights while small models run), Spark section in
+  docs/RUNNING.md. The lock file already contains torch 2.14.1+cu130 Arm wheels.

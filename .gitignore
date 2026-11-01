@@ -26,6 +26,11 @@ outputs/*/*
 !outputs/*/core.meta.json
 !outputs/*/extra.jsonl
 !outputs/*/extra.meta.json
+# DGX Spark runs: outputs/spark/<model>/ (same files tracked)
+!outputs/spark/*/
+outputs/spark/*/*
+!outputs/spark/*/core.jsonl
+!outputs/spark/*/core.meta.json
 runs/
 *.npz
 *.pt

@@ -58,6 +58,8 @@ def main():
     ap.add_argument("--only-probes",
                     help="comma-separated probe names; writes outputs/<model>/extra.jsonl by default")
     ap.add_argument("--out")
+    ap.add_argument("--out-root", default="outputs",
+                    help="directory for outputs/<model>/ files; each machine gets its own (e.g. outputs/spark)")
     args = ap.parse_args()
 
     with open(args.models_config, "rb") as f:
@@ -77,7 +79,7 @@ def main():
     only = [p.strip() for p in args.only_probes.split(",")] if args.only_probes else None
     if only and not args.out:
         tag = "extra" if not args.limit else f"extra_limit{args.limit}"
-    out = Path(args.out or f"outputs/{args.model}/{tag}.jsonl")
+    out = Path(args.out or f"{args.out_root}/{args.model}/{tag}.jsonl")
 
     if args.device == "mps":
         # let the few operators without an Apple GPU kernel run on the CPU instead of failing;

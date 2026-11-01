@@ -55,10 +55,13 @@ that cannot see the bus is red cannot be blamed for trusting a text that says it
 
 ## Precision
 
-All reported models run on one Apple Silicon Mac (16 GB) on the Apple GPU, in float16
-without quantisation (`configs/models_mac.toml`), so every row uses the same precision.
-The 4-bit NVIDIA profile (`configs/models.toml`) is kept for reproduction on small GPUs
-and is not used for reported results.
+All reported models run on one NVIDIA DGX Spark (GB10, 128 GB unified memory) in
+bfloat16 without quantisation (`configs/models_spark.toml`), so every row uses the same
+hardware and precision. The four small models were also run on an Apple Silicon Mac in
+float16 (`configs/models_mac.toml`); that run is reported only as a cross-platform
+agreement check. The 4-bit NVIDIA profile (`configs/models.toml`) is kept for
+reproduction on small GPUs and is not used for reported results. Every profile uses the
+same image size (longer side 672 px) and greedy decoding.
 
 ## Statistics (`faultline/analysis.py`, `scripts/analyze.py`)
 
@@ -72,4 +75,5 @@ and is not used for reported results.
   `--first N` restricts to the first N records of the stratified order (phase 1 uses 1,000).
 - **Outputs.** `results/metrics.csv`, `cells.csv`, `joint.csv`, `tests.csv`,
   `outcomes.jsonl` and `main_table.tex`. The final raw outputs
-  (`outputs/<model>/core.jsonl`) are committed so every number can be recomputed.
+  (`outputs/spark/<model>/core.jsonl`; the Mac check in `outputs/<model>/`) are committed
+  so every number can be recomputed.

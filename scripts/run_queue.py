@@ -5,9 +5,7 @@ extends every model to the whole subset. Each model runs in its own process, so 
 memory is released before the next one loads. Finished records are skipped, so the
 queue can be stopped and restarted at any time.
 
-Usage (Mac):
-  caffeinate -i uv run python scripts/run_queue.py --device mps --models-config configs/models_mac.toml \\
-      --models internvl3-2b,smolvlm2-2b,qwen25vl-3b,qwen3vl-4b --phases 1000,all
+Usage: scripts/mac/queue.sh (Apple GPU) and scripts/spark/queue.sh (DGX Spark).
 """
 
 import argparse
@@ -54,9 +52,10 @@ def main():
     ap.add_argument("--extra-models", default="",
                     help="models that get the extra probes added after the first phase")
     ap.add_argument("--extra-probes", default="delay,check_silent")
+    ap.add_argument("--out-root", default="outputs", help="passed to run_eval.py; holds the queue lock too")
     args = ap.parse_args()
 
-    lock = acquire_lock(ROOT / "outputs" / ".queue.lock")
+    lock = acquire_lock(ROOT / args.out_root / ".queue.lock")
     if lock is None:
         print("another queue is already running; not starting a second one")
         return
@@ -70,7 +69,8 @@ def main():
         cmd = [sys.executable, str(ROOT / "scripts" / "run_eval.py"),
                "--model", model, "--device", args.device,
                "--models-config", args.models_config, "--subset", args.subset,
-               "--dataset", args.dataset, "--images", args.images] + extra_args
+               "--dataset", args.dataset, "--images", args.images,
+               "--out-root", args.out_root] + extra_args
         print(f"\n=== {label}: {model}  ({time.strftime('%Y-%m-%d %H:%M')})", flush=True)
         t0 = time.time()
         code = subprocess.run(cmd, cwd=ROOT).returncode

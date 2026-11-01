@@ -1,8 +1,115 @@
 # Running FaultLine
 
-Two supported setups: an Apple Silicon Mac (models in full precision on the Apple GPU) and
-a Windows PC with NVIDIA GPUs (4-bit models). A model's results must come from one setup
-only. Commands below are one per block; run them one at a time.
+Three supported setups: an NVIDIA DGX Spark (all reported results, bfloat16), an Apple
+Silicon Mac (float16 on the Apple GPU; used as a cross-platform check) and a Windows PC with
+small NVIDIA GPUs (4-bit models). A model's results must come from one setup only. Commands
+below are one per block; run them one at a time.
+
+## NVIDIA DGX Spark (reported results)
+
+All reported results come from one DGX Spark (GB10, 128 GB unified memory, Arm CPU,
+DGX OS) in bfloat16 without quantisation (`configs/models_spark.toml`). Outputs go to
+`outputs/spark/<model>/`, separate from the Mac outputs.
+
+### Setup
+
+Check the machine (expect `aarch64`, the GB10 GPU, and at least 400 GB free disk):
+
+```
+uname -m && nvidia-smi && df -h ~
+```
+
+If `uv --version` fails, install uv and open a new terminal:
+
+```
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Set the commit author once (commits on this machine must show the same author):
+
+```
+git config --global user.name "Md Shohel Arman" && git config --global user.email "shohelarman.se@gmail.com"
+```
+```
+cd ~ && git clone https://github.com/shohel1arman/faultline-bench.git && cd faultline-bench
+```
+```
+uv sync --extra eval --group dev
+```
+```
+uv run pytest -q
+```
+
+Check that torch sees the GPU and can compute on it in bfloat16:
+
+```
+uv run python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0), torch.cuda.get_device_capability(0)); x = torch.randn(2048, 2048, device='cuda', dtype=torch.bfloat16); print((x @ x).float().abs().mean().item())"
+```
+
+Expect a `+cu130` version, `True`, the GB10 name, `(12, 1)` and a finite number. A warning
+that capability 12.1 is outside the supported range is expected and harmless if the
+number prints. If torch is a CPU build, run
+`uv sync --extra eval --group dev --reinstall-package torch`.
+
+### Images
+
+The dataset file is in the repository; only the images need fetching (3,043 files):
+
+```
+uv run python scripts/fetch_images.py --dataset data/faultline_v0.jsonl --out data/images --workers 2
+```
+
+Rerun it until it reports nothing left to fetch. If the image server keeps refusing,
+copy `data/images` from the Mac on a USB drive instead.
+
+### Model weights
+
+About 280 GB in total. Start the download in the background; it runs while the small
+models are evaluated (rerun the same command after an interruption):
+
+```
+mkdir -p outputs/spark && nohup uv run python scripts/prefetch_models.py --models-config configs/models_spark.toml > outputs/spark/prefetch.log 2>&1 &
+```
+```
+tail -n 5 outputs/spark/prefetch.log
+```
+
+### Smoke test
+
+```
+uv run python scripts/run_eval.py --model qwen3vl-4b --device cuda:0 --models-config configs/models_spark.toml --out-root outputs/spark --limit 3
+```
+```
+uv run python scripts/score_eval.py outputs/spark/qwen3vl-4b/core_limit3.jsonl --show 1
+```
+
+Check: no errors, readable answers, and the seconds per record (the Mac took 19.6 s).
+
+### Full run
+
+```
+nohup bash scripts/spark/queue.sh > /dev/null 2>&1 &
+```
+```
+tail -f outputs/spark/queue.log
+```
+
+Ctrl-C stops only the viewer. The queue runs every model on the first 1,000 records, then
+on all 2,001, smallest models first and the two 32B models last. A model that fails is
+reported in the log and the queue moves on. After a restart, run the `nohup` command again;
+finished records are skipped.
+
+### Saving results
+
+```
+git add outputs/spark/*/core.jsonl outputs/spark/*/core.meta.json
+```
+```
+git commit -m "Add DGX Spark outputs"
+```
+```
+git push
+```
 
 ## macOS (Apple Silicon)
 

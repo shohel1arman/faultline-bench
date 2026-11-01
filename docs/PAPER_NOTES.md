@@ -2,7 +2,7 @@
 
 Working notes for writing the CVPR 2027 paper: what was built, why, what has been found,
 and what still needs checking. Numbers are copied from `scripts/analyze.py` output; rerun
-it before quoting anything in the paper. Last updated 2026-10-31.
+it before quoting anything in the paper. Last updated 2026-11-02.
 
 ## One-line thesis
 
@@ -32,10 +32,21 @@ of error it is or which input is wrong: detection, resolution and attribution co
 
 ## Models and setup
 
-- InternVL3-2B, SmolVLM2-2.2B, Qwen2.5-VL-3B, Qwen3-VL-4B. All float16, no quantisation,
-  on one Mac mini (Apple M-series, 16 GB, Apple GPU via PyTorch MPS, torch 2.14.1,
-  transformers 5.22). Images downscaled to longer side 672 px. Greedy decoding.
-- No closed models (no API budget). Scope is 2B to 4B: state as a limitation.
+- Decision 2026-11-02: every reported model runs on one NVIDIA DGX Spark (GB10, 128 GB
+  unified memory) in bfloat16, no quantisation (`configs/models_spark.toml`, outputs in
+  `outputs/spark/`). Torch 2.14.1+cu130, transformers 5.22. Images downscaled to longer
+  side 672 px for every model. Greedy decoding.
+- Eleven models, run smallest first:
+  - Qwen3-VL 2B, 4B, 8B, 32B and 30B-A3B (mixture of experts, about 3B active). This is
+    the scaling ladder within one family, the paper's main new question: does the gap
+    between noticing a conflict and answering from the image close with scale?
+  - Qwen2.5-VL 3B, 7B, 32B; InternVL3 2B, 8B; SmolVLM2 2.2B.
+  - Not run: InternVL3-38B (time); 72B models (do not fit in bfloat16).
+- The four small models also ran on a Mac mini (16 GB, Apple GPU, float16). That run is
+  the cross-platform check (agreement of answers across hardware and precision), not a
+  table row. The InternVL3-2B numbers below are from the Mac and will be replaced by the
+  Spark run.
+- No closed models (no API budget): state as a limitation.
 - Multiple choice scored from next-token letter probabilities (no generation).
 
 ## Probes (prompt version p1.1, `faultline/prompts.py`)
@@ -53,7 +64,7 @@ paired probe comparisons. Detection is reported minus the false-flag rate on con
 
 ## Results so far
 
-### InternVL3-2B, full core set (1,800 conflicts, 201 controls)
+### InternVL3-2B, full core set, Mac float16 run (1,800 conflicts, 201 controls)
 
 | Metric | Value [95% CI] |
 |---|---|
@@ -112,7 +123,7 @@ S3), so relation results must be read through the perceived-only metric.
 
 ## Limitations to state
 
-Model scale (2B to 4B); one hardware platform; template descriptions; scene-graph label
+Largest model 32B (no 72B); one hardware platform for reported rows; template descriptions; scene-graph label
 noise (estimated by the human check); 2D image-plane relations only; heuristic parsing
 (unparsed rates reported, 0% so far for InternVL3-2B); no closed models.
 
@@ -126,6 +137,11 @@ From the outline, to verify: Deng et al. CVPR 2025, CLASH, MC2, Nguyen et al. 20
 
 ## Open items
 
-- Remaining model runs (queue): phase 1 about Nov 2, everything about Nov 3 to 4.
+- Mac queue (cross-platform check): phase 1 done for all four models on Nov 1;
+  everything about Nov 3, 05:00.
+- Spark runs: set up Nov 2; estimated 3.5 to 5.5 days for all eleven models (estimate from
+  memory bandwidth, not measured; the 32B models dominate). Freeze all runs by Nov 11.
+- Cross-platform agreement analysis (Mac float16 vs Spark bfloat16, four small models).
+- Scaling figure: metric vs parameters for Qwen3-VL, with the other families as points.
 - Human check of 500 samples by two annotators (agreement, error rate per cell).
 - OpenReview profiles for all authors before the Nov 10 registration.
