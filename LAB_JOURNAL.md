@@ -266,3 +266,21 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   with the Mac files. New: configs/models_spark.toml, scripts/spark/queue.sh,
   scripts/prefetch_models.py (downloads weights while small models run), Spark section in
   docs/RUNNING.md. The lock file already contains torch 2.14.1+cu130 Arm wheels.
+
+## 2026-11-03
+
+**Mac runs complete; first four-model analysis (Mac float16, cross-platform check)**
+- Queue finished at about 04:20: all four small models on all 2,001 core records and the
+  InternVL3-2B control probes; no failures. Auto-resume removed; outputs committed.
+- The main pattern holds for all four models: conflicts are flagged (71-95%) yet answered
+  from the text; "detected but answered from text" is the largest joint pattern (54-76%).
+  False flags on controls are high (20-61%), so adjusted detection (23-58%) is reported.
+- The verbalize gain is mostly turn structure: the delay control (question in a later
+  turn after a neutral reply) explains +29.3 of +39.0 points for Qwen3-VL-4B; the model's
+  own report adds -5.6 to +13.1 depending on the model. The InternVL-only reading from
+  Oct 31 is superseded.
+- Qwen3-VL-4B answers "Error: no / Wrong input: none" in 1,795 of 1,800 attribution
+  reports while naming the right error type and words, contradicting its own detection
+  answers. Kept as a finding; prompts stay frozen at p1.1 for the Spark run.
+- Relation detection is high only because relation sentences are flagged regardless
+  (46-52% false flags on relation controls for the Qwen models).

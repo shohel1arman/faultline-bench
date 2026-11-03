@@ -100,12 +100,72 @@ Readings: detection falls with severity for attribute and object, which supports
 severity design; relations are hard to perceive at all (near the 25% guessing rate at
 S3), so relation results must be read through the perceived-only metric.
 
-### Observations from smoke tests (3 records each)
+### Four small models, full core set, Mac float16 run (cross-platform check)
 
-- SmolVLM2 often does not follow the attribution format (echoes the option list).
-- Qwen2.5-VL-3B answered from the text on all three records even after verbalizing.
-- Qwen3-VL-4B switched to the image answer with the focus instruction and after
-  verbalizing on the shown record. Anecdotes only; wait for the full runs.
+`scripts/analyze.py` on all 2,001 records of each model (1,800 conflicts, 201 controls).
+These are the Mac numbers; the paper's rows will come from the Spark run. 95% CIs.
+
+| Metric | InternVL3-2B | Qwen2.5-VL-3B | Qwen3-VL-4B | SmolVLM2-2.2B |
+|---|---|---|---|---|
+| Perceives fact from image alone | 73.7 | 77.1 | 83.0 | 68.7 |
+| Flags conflict | 71.1 | 94.2 | 94.9 | 83.3 |
+| False flags on controls | 19.9 | 46.3 | 36.8 | 60.7 |
+| Detection, adjusted | 51.2 [45.2, 56.8] | 48.0 [40.6, 55.0] | 58.1 [51.1, 64.9] | 22.6 [15.6, 29.5] |
+| Answers from image (mcq) | 16.4 [14.7, 18.2] | 18.1 [16.3, 20.0] | 41.1 [38.7, 43.5] | 8.1 [6.8, 9.5] |
+| Answers from text (mcq) | 82.6 | 81.6 | 57.1 | 91.7 |
+| From image when perceived | 21.9 | 23.3 | 47.3 | 11.7 |
+| Detected but answered from text (D--) | 56% | 70% | 54% | 76% |
+| Open-ended from image | 11.6 | 19.4 | 38.1 | 10.6 |
+| "Rely on the image" (gain) | 21.6 (+5.2) | 25.8 (+7.8) | 76.1 (+34.9) | 9.4 (+1.3) |
+| Question in a later turn, "OK." reply (delay) | 30.2 | 25.0 | 70.4 | 13.8 |
+| Same, after the check prompt (check_silent) | 39.6 | 20.7 | 72.1 | 18.3 |
+| After its own error report (verbalize) | 52.7 | 23.9 | 80.1 | 12.7 |
+| Verbalize gain = structure + check + report | 36.3 = 13.8 + 9.4 + 13.1 | 5.9 = 6.9 - 4.3 + 3.3 | 39.0 = 29.3 + 1.6 + 8.1 | 4.6 = 5.7 + 4.5 - 5.6 |
+| Wrong words located | 72.1 | 86.6 | 87.8 | 69.1 |
+| Error type / wrong input / severity | 40.1 / 19.4 / 20.4 | 54.1 / 60.7 / 30.6 | 82.0 / 0.8 / 32.9 | 23.8 / 36.2 / 0.9 |
+| All four attribution parts | 0.8 | 10.3 | 0.5 | 0.0 |
+| Coupling: resolved if detected minus not | +13.9 | +18.1 | +38.7 | +6.1 |
+| Controls answered correctly | 100.0 | 100.0 | 99.0 | 100.0 |
+| Unparsed attribution reports | 0.0 | 0.0 | 0.0 | 6.3 |
+
+Readings (to be confirmed on the Spark run):
+
+- The thesis holds for all four: models flag the conflict on 71-95% of conflicts and
+  still answer from the text; "detected but answered from text" is the most common
+  pattern for every model (54-76% of conflicts).
+- Raw detection is inflated by false flags (20-61% of faithful controls are flagged), so
+  adjusted detection is the honest number; SmolVLM2 flags almost everything.
+- The verbalize effect is mostly turn structure, not the model's own report. Moving the
+  question to a later turn behind a neutral "OK." accounts for most of the gain for
+  Qwen3-VL-4B (+29.3 of +39.0) and about a third for InternVL3-2B. The report itself adds
+  +13.1, +8.1, +3.3 and -5.6. Asking the model to check without its report helps
+  InternVL3-2B (+9.4) and hurts Qwen2.5-VL-3B (-4.3). The earlier InternVL-only reading
+  ("verbalizing helps by +36") must not be used; this decomposition replaces it.
+- Qwen3-VL-4B is the most image-reliant and the most steerable (+34.9 from one sentence).
+- Attribution parts come apart: models locate the wrong words (69-88%) but rarely say
+  which input is wrong. Qwen3-VL-4B writes "Error: no / Wrong input: none / How obvious:
+  none" on 1,795 of 1,800 conflicts while naming the right error type and words, so its
+  report contradicts its own detection answer (95% flagged). Report as a finding about
+  self-report consistency; do not change the prompt after seeing it (prompts stay p1.1).
+
+By cell (perceive / detect / resolve):
+
+| Model | Type | S1 | S2 | S3 |
+|---|---|---|---|---|
+| Qwen2.5-VL-3B | attribute | 87 / 94 / 32 | 84 / 94 / 30 | 86 / 78 / 13 |
+| | object | 93 / 99 / 16 | 94 / 100 / 10 | 94 / 96 / 12 |
+| | relation | 62 / 98 / 20 | 50 / 96 / 16 | 44 / 94 / 12 |
+| Qwen3-VL-4B | attribute | 88 / 93 / 64 | 89 / 96 / 57 | 86 / 82 / 39 |
+| | object | 94 / 100 / 28 | 94 / 100 / 25 | 91 / 96 / 34 |
+| | relation | 76 / 98 / 48 | 68 / 96 / 39 | 62 / 94 / 35 |
+| SmolVLM2-2.2B | attribute | 87 / 94 / 20 | 84 / 96 / 8 | 76 / 87 / 8 |
+| | object | 87 / 96 / 8 | 92 / 94 / 10 | 86 / 92 / 18 |
+| | relation | 37 / 66 / 0 | 34 / 66 / 0 | 34 / 59 / 0 |
+
+Relation detection near 95% with perception near 50% (Qwen models) matches the high
+false-flag rate on relation controls (46-52%): relation sentences are flagged whether or
+not they are wrong. Attribute detection falls at S3 for every model, supporting the
+severity grading; object severity barely changes detection.
 
 ## Decisions to report honestly
 
@@ -115,7 +175,11 @@ S3), so relation results must be read through the perceived-only metric.
   label "Obvious:" is accepted, and only the named words (quoted part or text before an
   explanation) count for the span. Both are tested on real outputs.
 - The verbalize gain was found before its controls existed; the controls were added
-  before the remaining models ran, and InternVL3-2B gets them in an extra pass.
+  before the remaining models ran, and InternVL3-2B got them in an extra pass. With the
+  controls, most of the gain is turn structure (see the table above); say so plainly.
+- Prompts are frozen at p1.1 for the Spark run, including the attribution prompt that
+  Qwen3-VL-4B answers inconsistently, so the Mac and Spark runs stay comparable and no
+  prompt is tuned on results.
 - Models often answer "Wrong input: image" while quoting the text's words; scored as
   wrong. Possible prompt ambiguity; discuss in limitations.
 - Object conflicts are often labelled "relation" by models (the sentence is a relation
