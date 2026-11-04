@@ -284,3 +284,19 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   answers. Kept as a finding; prompts stay frozen at p1.1 for the Spark run.
 - Relation detection is high only because relation sentences are flagged regardless
   (46-52% false flags on relation controls for the Qwen models).
+
+## 2026-11-04
+
+**DGX Spark set up**
+- aarch64, NVIDIA GB10, driver 580, CUDA 13.0, 3.5 TB free. `uv sync` installed
+  torch 2.14.1+cu130 from the lock file; the GPU reports capability (12, 1) and bfloat16
+  matrix products run without warnings. Tests pass. All 3,043 images fetched, none failed.
+  Model weights download at about 8 MB/s; the seven small and mid-size models took about
+  two hours.
+- Smoke test, Qwen3-VL-4B, 3 records, bfloat16: about 5.5 s per record from the probe
+  times (Mac float16: 19.6 s), about 3.5x faster. On the record shown (fl_00002) every
+  multiple-choice answer and the attribution report match the Mac run exactly; the
+  free-text detection reason differs only in wording near the end. Summary metrics on the
+  three records are identical to the Mac's.
+- The queue script uses systemd-inhibit only if the session is allowed to take the lock,
+  so the queue cannot fail to start over a sleep-inhibit permission.
