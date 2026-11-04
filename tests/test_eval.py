@@ -425,3 +425,15 @@ def test_queue_lock_blocks_a_second_queue(tmp_path):
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
     assert out.stdout.strip() == "True"
     first.close()
+
+
+def test_attribution_reads_unlabeled_five_line_reply():
+    # real Qwen3-VL-2B output (fl_00002): the five answers without their labels
+    a = parse.attribution("no\nnone\nnone\nnone\nnone")
+    assert a["parsed"] is True
+    assert (a["error"], a["input"], a["type"], a["span"], a["obvious"]) == ("no", "none", "none", "none", "none")
+    b = parse.attribution("yes\ntext\nattribute\nthe red bus\nsubtle")
+    assert (b["error"], b["input"], b["type"], b["span"], b["obvious"]) == ("yes", "text", "attribute", "the red bus", "subtle")
+    # prose, or lines with labels of another kind, are not read by position
+    assert parse.attribution("The image shows a bus.\nIt is red.")["parsed"] is False
+    assert parse.attribution("A: yes\nB: text\nC: object\nD: bus\nE: subtle")["parsed"] is False

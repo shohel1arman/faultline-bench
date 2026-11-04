@@ -145,9 +145,24 @@ def _first_class(value, table):
     return None
 
 
+def _unlabeled(output):
+    """The five answers by position, when a model drops the labels and writes one line each.
+
+    Qwen3-VL-2B often replies 'no\nnone\nnone\nnone\nnone' to the five-line format.
+    Only exactly five non-empty lines count, so ordinary prose is never read this way.
+    """
+    lines = [re.sub(r"^\s*(?:[*\-]|\d+[.)])?\s*", "", ln).strip()
+             for ln in (output or "").splitlines() if ln.strip()]
+    if len(lines) != len(FIELDS) or any(":" in ln for ln in lines):
+        return None
+    return dict(zip(FIELDS, lines))
+
+
 def attribution(output):
     # the label must be followed directly by a colon, so "error" does not match "Error type:"
     raw = {k: _field(output, pat) for k, pat in FIELDS.items()}
+    if all(v is None for v in raw.values()):
+        raw = _unlabeled(output) or raw
     return {
         "error": _first_class(raw["error"], {"yes": ("yes",), "no": ("no",)}),
         "input": _first_class(raw["input"], INPUT_WORDS),

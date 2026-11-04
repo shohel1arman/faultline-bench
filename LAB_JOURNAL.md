@@ -300,3 +300,15 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   three records are identical to the Mac's.
 - The queue script uses systemd-inhibit only if the session is allowed to take the lock,
   so the queue cannot fail to start over a sleep-inhibit permission.
+
+**Spark queue resumed after a shutdown (11:26)**
+- InternVL3-2B, first 1,000 records on the Spark: 0 errors, 4.5 s/record. Against the Mac
+  float16 run on the same records: 98.8% identical multiple-choice answers, 98.8%
+  identical detection decisions, 87-93% identical attribution fields; full free-text
+  replies differ in wording more often (58-60% identical).
+- Qwen3-VL-2B runs at 1.3 s/record because its answers are terse: detection is a bare
+  "no", and the attribution report is often five unlabeled lines ("no / none / none /
+  none / none"). Partial results on 539 records look sane (perceive 78%, adjusted
+  detection 67%, from image 34%, controls 100%), but 32% of attribution reports were
+  unparsed. Added a positional reading of exactly five unlabeled lines (scoring only,
+  tested on the real output); it changes no earlier result.

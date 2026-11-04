@@ -177,6 +177,10 @@ severity grading; object severity barely changes detection.
 - The verbalize gain was found before its controls existed; the controls were added
   before the remaining models ran, and InternVL3-2B got them in an extra pass. With the
   controls, most of the gain is turn structure (see the table above); say so plainly.
+- Third parser fix (2026-11-04, scoring only): a reply of exactly five unlabeled lines is
+  read by position. Qwen3-VL-2B answers the attribution format this way (32% of its first
+  539 records were unparsed). No existing Mac or Spark result changes: no other model
+  produced such a reply.
 - Prompts are frozen at p1.1 for the Spark run, including the attribution prompt that
   Qwen3-VL-4B answers inconsistently, so the Mac and Spark runs stay comparable and no
   prompt is tuned on results.
