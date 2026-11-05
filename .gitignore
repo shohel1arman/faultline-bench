@@ -47,3 +47,4 @@ data/preview.html
 # human check: the page embeds 500 photos (rebuild with scripts/make_annotation.py);
 # the sample list and the exported answers are tracked
 annotation/*.html
+annotation/site/

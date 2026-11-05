@@ -1,0 +1,442 @@
+<title>FaultLine Human Check</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: photo on the left, the three steps stacked on the right; one column on phones. */
+:root {
+  --bg: #f3f4f1; --panel: #ffffff; --ink: #1c2321; --muted: #5f6b67; --line: #d7ddd9;
+  --accent: #1f6f5c; --accent-ink: #ffffff; --chosen: #dcece6; --warn: #8a5a00; --warn-bg: #fbf0d9;
+  --ok: #1f6f5c;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161b1a; --panel: #1f2624; --ink: #e7ece9; --muted: #9aa8a3; --line: #34403c;
+    --accent: #6fc7ae; --accent-ink: #0d1614; --chosen: #24403a; --warn: #f0c060; --warn-bg: #3a3020;
+    --ok: #6fc7ae; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161b1a; --panel: #1f2624; --ink: #e7ece9; --muted: #9aa8a3; --line: #34403c;
+  --accent: #6fc7ae; --accent-ink: #0d1614; --chosen: #24403a; --warn: #f0c060; --warn-bg: #3a3020;
+  --ok: #6fc7ae; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.45 var(--sans); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--panel); }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--panel);
+  border-bottom: 1px solid var(--line); }
+header .wrap { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding-block: 10px; }
+header .grow { flex: 1; }
+.brand { font-weight: 600; letter-spacing: .01em; }
+.mono { font-family: var(--mono); font-size: 13px; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; width: 140px; }
+.bar > div { height: 100%; background: var(--accent); width: 0; }
+.save { font-size: 13px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.save.ok { color: var(--ok); border-color: var(--ok); }
+.save.local { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
+main.wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px;
+  padding-block: 16px; max-width: 1320px; margin: 0 auto; }
+@media (max-width: 860px) { main.wrap { grid-template-columns: minmax(0, 1fr); } }
+.imgbox { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px;
+  display: flex; justify-content: center; align-items: center; min-height: 280px; }
+.imgbox img { max-width: 100%; max-height: 72vh; display: block; }
+.col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.step { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.step h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+  margin: 0 0 8px; font-weight: 600; }
+.q { font-size: 18px; font-weight: 600; margin: 0 0 10px; text-wrap: balance; }
+.desc { font-size: 18px; margin: 0 0 12px; padding: 8px 12px; border-left: 3px solid var(--accent);
+  background: var(--bg); }
+.opts { display: grid; gap: 6px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 8px 12px; cursor: pointer; text-align: left; }
+button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.chosen { background: var(--chosen); border-color: var(--accent); font-weight: 600; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.key { display: inline-block; min-width: 1.7em; color: var(--muted); font-family: var(--mono); font-size: 13px; }
+.nav { display: flex; gap: 8px; flex-wrap: wrap; }
+.note { color: var(--muted); font-size: 14px; }
+.banner { background: var(--warn-bg); color: var(--warn); font-size: 14px; }
+.banner .wrap { padding-block: 8px; }
+#intro { max-width: 760px; margin: 0 auto; padding-block: 24px; }
+#intro .step { padding: 20px 24px; }
+#intro h1 { margin: 0 0 8px; font-size: 24px; text-wrap: balance; }
+#intro ol { padding-left: 20px; }
+#intro li { margin-bottom: 6px; }
+input[type=text] { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); color: var(--ink); width: 160px; }
+textarea { width: 100%; min-height: 120px; font: 12px/1.4 var(--mono); background: var(--bg); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div id="intro" class="wrap">
+  <div class="step">
+    <h1>FaultLine human check</h1>
+    <p>You will see <b id="nitems"></b> photos. For each one:</p>
+    <ol>
+      <li><b>Answer the question from the photo.</b> Pick the option that is true in the photo. Choose
+        <i>Can't tell</i> if the photo does not let you decide (object too small, hidden, several objects
+        the question could mean) or if more than one option is true. You see the description only after
+        this step.</li>
+      <li><b>Does the description match the photo?</b> Read the whole description. Answer <i>No</i> if any
+        part of it is false for the photo.</li>
+      <li>If it does not match: <b>how obvious is the mistake?</b> <i>Obvious</i>: you notice it at once.
+        <i>Moderate</i>: you notice it after looking. <i>Subtle</i>: you need to look closely.</li>
+    </ol>
+    <p><b>Left, right, above, below</b> are as seen in the photo (the viewer's left), not the object's own
+      left. <b>Colours</b> mean the main colour of the object. Work on your own and do not discuss items
+      with the other annotator.</p>
+    <p class="note">Keys: 1&ndash;4 options, 5 can't tell; Y / N / C for the description; 1 / 2 / 3 for how
+      obvious; &larr; &rarr; to move.</p>
+    <p class="note" id="savemode-intro">Checking where your answers will be saved&hellip;</p>
+    <p>Annotator ID (the ID you were given, for example A1 or A2, not your name):</p>
+    <div class="row">
+      <input id="who" type="text" placeholder="A1" autocomplete="off">
+      <button class="primary" id="start">Start</button>
+    </div>
+    <p class="note">Restore answers from an exported file: <input id="importfile" type="file" accept=".json,application/json"></p>
+    <p id="introerr" class="note" style="color:var(--warn)"></p>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="wrap">
+      <span class="brand">FaultLine check</span>
+      <span class="note" id="whoami"></span>
+      <span class="save" id="savebadge">saving&hellip;</span>
+      <span class="grow"></span>
+      <span id="progress" class="note"></span>
+      <div class="bar"><div id="barfill"></div></div>
+      <button id="exportbtn">Export</button>
+      <button id="helpbtn">Instructions</button>
+    </div>
+  </header>
+  <div id="banner" class="banner" hidden><div class="wrap" id="bannertext"></div></div>
+  <main class="wrap">
+    <div class="imgbox"><img id="img" alt="photo to check"></div>
+    <div class="col">
+      <section class="step">
+        <h2>Step 1 &middot; answer from the photo</h2>
+        <p class="q" id="question"></p>
+        <div class="opts" id="opts"></div>
+      </section>
+      <section class="step" id="step2" hidden>
+        <h2>Step 2 &middot; does the description match the photo?</h2>
+        <p class="desc" id="text"></p>
+        <div class="row">
+          <button data-m="yes"><span class="key">Y</span>Yes, it matches</button>
+          <button data-m="no"><span class="key">N</span>No, something is wrong</button>
+          <button data-m="cant_tell"><span class="key">C</span>Can't tell</button>
+        </div>
+      </section>
+      <section class="step" id="step3" hidden>
+        <h2>Step 3 &middot; how obvious is the mistake?</h2>
+        <div class="row">
+          <button data-o="obvious"><span class="key">1</span>Obvious</button>
+          <button data-o="moderate"><span class="key">2</span>Moderate</button>
+          <button data-o="subtle"><span class="key">3</span>Subtle</button>
+        </div>
+      </section>
+      <div class="nav">
+        <button id="prev">&larr; Previous</button>
+        <button id="next">Next &rarr;</button>
+        <button id="jump">First unfinished</button>
+      </div>
+      <p class="note mono" id="itemid"></p>
+      <section class="step" id="exportbox" hidden>
+        <h2>Export</h2>
+        <p class="note">Saving a file is not available here. Copy this text and send it instead.</p>
+        <textarea id="exporttext" readonly></textarea>
+        <div class="row"><button id="copybtn">Copy</button><button id="closeexport">Close</button></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script id="items" type="application/json">/*ITEMS*/</script>
+<script>
+(function () {
+  "use strict";
+  var ITEMS = JSON.parse(document.getElementById("items").textContent);
+  var PAGE = "/*PAGE_VERSION*/";
+  var LETTERS = ["A", "B", "C", "D", "E", "F"];
+  var who = null, answers = {}, idx = 0;
+  // shared store: answers go to ann/<viewer id>/items/<record id>
+  var db = null, uid = null, remote = false, downloads = null;
+  var writeChain = Promise.resolve();
+
+  function $(id) { return document.getElementById(id); }
+  function lsKey() { return "faultline_check_" + PAGE + "_" + who; }
+  function saveLocal() {
+    try { localStorage.setItem(lsKey(), JSON.stringify({ idx: idx, answers: answers })); } catch (e) {}
+  }
+  function loadLocal() {
+    try {
+      var s = JSON.parse(localStorage.getItem(lsKey()) || "null");
+      if (s) { merge(s.answers || {}); idx = s.idx || 0; }
+    } catch (e) {}
+  }
+  function merge(other) {
+    Object.keys(other).forEach(function (k) {
+      if (k.charAt(0) === "_") return;
+      var a = answers[k], b = other[k];
+      if (!a || (complete(b) && (!complete(a) || (b.finished || "") > (a.finished || "")))) answers[k] = b;
+    });
+  }
+  function complete(a) {
+    return !!a && !!a.choice && !!a.matches && (a.matches !== "no" || !!a.obvious);
+  }
+  function nDone() {
+    var n = 0;
+    ITEMS.forEach(function (it) { if (complete(answers[it.id])) n++; });
+    return n;
+  }
+
+  function setBadge() {
+    var b = $("savebadge");
+    if (remote) { b.textContent = "saved to your account"; b.className = "save ok"; }
+    else { b.textContent = "saved in this browser only"; b.className = "save local"; }
+  }
+  function showBanner(t) { $("bannertext").textContent = t; $("banner").hidden = !t; }
+  function goLocal(reason) {
+    if (!remote) return;
+    remote = false; setBadge();
+    showBanner(reason + " Your answers are kept in this browser; click Export when you finish and send the file.");
+  }
+
+  function pushRemote(id, a) {
+    if (!remote) return;
+    var body = { annotator: who, page_version: PAGE, choice: a.choice || null, matches: a.matches || null,
+      obvious: a.obvious || null, shown: a.shown || null, finished: a.finished || null };
+    writeChain = writeChain.then(function () {
+      if (!remote) return;
+      var ref = db.doc("ann/" + uid + "/items/" + id);
+      return ref.set(body).catch(function (e) {
+        if (e && e.code === "unavailable") {
+          return new Promise(function (r) { setTimeout(r, 800 + Math.random() * 800); }).then(function () {
+            return ref.set(body);
+          });
+        }
+        throw e;
+      }).catch(function (e) {
+        goLocal(e && e.code === "quota_exceeded" ? "The shared store is full." : "Saving to your account stopped working.");
+      });
+    });
+  }
+
+  function render() {
+    var it = ITEMS[idx], a = answers[it.id] || {};
+    if (!a.shown) { a.shown = new Date().toISOString(); answers[it.id] = a; }
+    $("img").src = it.image;
+    $("question").textContent = it.question;
+    var opts = $("opts");
+    opts.innerHTML = "";
+    it.options.forEach(function (o, k) {
+      var b = document.createElement("button");
+      b.innerHTML = '<span class="key">' + (k + 1) + "</span>" + LETTERS[k] + ". ";
+      b.appendChild(document.createTextNode(o));
+      if (a.choice === o) b.className = "chosen";
+      b.onclick = function () { setChoice(o); };
+      opts.appendChild(b);
+    });
+    var c = document.createElement("button");
+    c.innerHTML = '<span class="key">5</span>Can\'t tell, or more than one is true';
+    if (a.choice === "cant_tell") c.className = "chosen";
+    c.onclick = function () { setChoice("cant_tell"); };
+    opts.appendChild(c);
+
+    $("step2").hidden = !a.choice;
+    $("text").textContent = it.text;
+    document.querySelectorAll("[data-m]").forEach(function (b) {
+      b.classList.toggle("chosen", a.matches === b.getAttribute("data-m"));
+    });
+    $("step3").hidden = a.matches !== "no";
+    document.querySelectorAll("[data-o]").forEach(function (b) {
+      b.classList.toggle("chosen", a.obvious === b.getAttribute("data-o"));
+    });
+    var done = nDone();
+    $("progress").textContent = "item " + (idx + 1) + " of " + ITEMS.length + " · " + done + " done";
+    $("barfill").style.width = (100 * done / ITEMS.length) + "%";
+    $("itemid").textContent = "record " + it.id;
+    if (!remote && done > 0 && done % 100 === 0 && answers._lastExport !== done) {
+      showBanner("You have finished another 100 items. Click Export to save a backup file.");
+    }
+    if (done === ITEMS.length) showBanner(remote ? "All items done. Your answers are saved to your account." :
+      "All items done. Click Export and send the file.");
+  }
+
+  function cur() { var id = ITEMS[idx].id; answers[id] = answers[id] || {}; return answers[id]; }
+  function setChoice(v) { var a = cur(); a.choice = v; saveLocal(); render(); }
+  function setMatches(v) {
+    var a = cur(); if (!a.choice) return;
+    a.matches = v; if (v !== "no") delete a.obvious;
+    finishIfComplete(a);
+  }
+  function setObvious(v) {
+    var a = cur(); if (a.matches !== "no") return;
+    a.obvious = v; finishIfComplete(a);
+  }
+  function finishIfComplete(a) {
+    saveLocal(); render();
+    if (complete(a)) {
+      a.finished = new Date().toISOString(); saveLocal();
+      pushRemote(ITEMS[idx].id, a);
+      setTimeout(function () { if (idx < ITEMS.length - 1) { idx++; saveLocal(); render(); } }, 250);
+    }
+  }
+  function go(d) { idx = Math.max(0, Math.min(ITEMS.length - 1, idx + d)); saveLocal(); render(); }
+  function jump() {
+    for (var k = 0; k < ITEMS.length; k++) {
+      if (!complete(answers[ITEMS[k].id])) { idx = k; saveLocal(); render(); return; }
+    }
+    idx = ITEMS.length - 1; render();
+  }
+
+  function exportData() {
+    var out = { annotator: who, page_version: PAGE, exported: new Date().toISOString(),
+      n_items: ITEMS.length, n_done: nDone(), answers: {} };
+    ITEMS.forEach(function (it) { if (answers[it.id]) out.answers[it.id] = answers[it.id]; });
+    return out;
+  }
+  function exportFile() {
+    var out = exportData(), text = JSON.stringify(out, null, 1);
+    var name = "faultline_check_" + who + "_" + out.n_done + ".json";
+    answers._lastExport = out.n_done; saveLocal();
+    var fallback = function () { $("exporttext").value = text; $("exportbox").hidden = false; };
+    if (!downloads) return fallback();
+    downloads.save({ filename: name, data: text }).then(function (r) {
+      showBanner(r && r.status === "saved" ? "Exported " + name + "." : "");
+    }).catch(function (e) { if (!e || e.code !== "cancelled") fallback(); });
+  }
+
+  function loadRemote() {
+    if (!remote) return Promise.resolve();
+    var timer;
+    var timeout = new Promise(function (_, rej) { timer = setTimeout(function () { rej({ code: "timeout" }); }, 10000); });
+    var read = db.collection("ann/" + uid + "/items").limit(1000).get().then(function (snap) {
+      var got = {};
+      snap.docs.forEach(function (d) {
+        var v = d.data() || {};
+        if (v.page_version === PAGE) {
+          var a = { choice: v.choice, matches: v.matches, shown: v.shown, finished: v.finished };
+          if (v.obvious) a.obvious = v.obvious;
+          got[d.id] = a;
+        }
+      });
+      merge(got);
+    });
+    return Promise.race([read, timeout]).then(function () { clearTimeout(timer); }, function (e) {
+      clearTimeout(timer);
+      if (e && e.code === "timeout") showBanner("Your saved answers could not be loaded yet; new answers are still saved.");
+      else goLocal("Your account's saved answers could not be read.");
+    });
+  }
+
+  function syncRemote() {
+    if (!remote || !who) return Promise.resolve();
+    return db.doc("ann/" + uid).set({ annotator: who, page_version: PAGE, updated: new Date().toISOString() })
+      .catch(function () { goLocal("Saving to your account is not available for you."); })
+      .then(loadRemote).then(function () {
+        // answers kept only in this browser so far go to the account too
+        if (remote) ITEMS.forEach(function (it) { var a = answers[it.id]; if (complete(a)) pushRemote(it.id, a); });
+      });
+  }
+  var started = false;
+  function begin() {
+    var w = $("who").value.trim().replace(/[^A-Za-z0-9_-]/g, "");
+    if (!w) { $("introerr").textContent = "Please enter your annotator ID."; return; }
+    if (started) { $("intro").hidden = true; $("app").hidden = false; render(); return; }
+    who = w; started = true;
+    loadLocal();
+    syncRemote().then(startApp);
+  }
+  function startApp() {
+    $("intro").hidden = true; $("app").hidden = false;
+    $("whoami").textContent = "annotator " + who;
+    setBadge(); jump();
+  }
+
+  $("nitems").textContent = ITEMS.length;
+  $("start").onclick = begin;
+  $("who").addEventListener("keydown", function (e) { if (e.key === "Enter") begin(); });
+  $("importfile").onchange = function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var d = JSON.parse(r.result);
+        if (d.page_version !== PAGE) { $("introerr").textContent = "That file is from a different version of this page."; return; }
+        $("who").value = d.annotator; merge(d.answers || {});
+        $("introerr").textContent = "Loaded " + Object.keys(d.answers || {}).length + " answers for " + d.annotator + ". Click Start.";
+      } catch (err) { $("introerr").textContent = "Could not read that file."; }
+    };
+    r.readAsText(f);
+  };
+  $("exportbtn").onclick = exportFile;
+  $("copybtn").onclick = function () {
+    var t = $("exporttext");
+    var sel = function () { t.focus(); t.select(); };
+    try { navigator.clipboard.writeText(t.value).then(function () { $("copybtn").textContent = "Copied"; }, sel); }
+    catch (e) { sel(); }
+  };
+  $("closeexport").onclick = function () { $("exportbox").hidden = true; };
+  $("helpbtn").onclick = function () { $("app").hidden = true; $("intro").hidden = false;
+    $("start").textContent = "Continue"; $("who").value = who; };
+  $("prev").onclick = function () { go(-1); };
+  $("next").onclick = function () { go(1); };
+  $("jump").onclick = jump;
+  document.querySelectorAll("[data-m]").forEach(function (b) {
+    b.onclick = function () { setMatches(b.getAttribute("data-m")); };
+  });
+  document.querySelectorAll("[data-o]").forEach(function (b) {
+    b.onclick = function () { setObvious(b.getAttribute("data-o")); };
+  });
+  document.addEventListener("keydown", function (e) {
+    if ($("app").hidden || e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    var a = cur(), it = ITEMS[idx], k = e.key.toLowerCase();
+    if (k === "arrowleft") return go(-1);
+    if (k === "arrowright") return go(1);
+    if (a.matches === "no" && !a.obvious && ["1", "2", "3"].indexOf(k) >= 0) {
+      return setObvious(["obvious", "moderate", "subtle"][+k - 1]);
+    }
+    if (!a.choice) {
+      var n = +k;
+      if (n >= 1 && n <= it.options.length) return setChoice(it.options[n - 1]);
+      if (k === "5") return setChoice("cant_tell");
+    }
+    if (a.choice && !a.matches) {
+      if (k === "y") return setMatches("yes");
+      if (k === "n") return setMatches("no");
+      if (k === "c") return setMatches("cant_tell");
+    }
+  });
+
+  // light up the shared store and file saving when the viewer provides them
+  var claudeApi = window.claude && window.claude.use ? window.claude : null;
+  var intro = $("savemode-intro");
+  intro.textContent = "Your answers will be kept in this browser. Click Export when you finish.";
+  if (claudeApi) {
+    claudeApi.use("downloads").then(function (d) { downloads = d; }, function () {});
+    Promise.all([claudeApi.use("db"), claudeApi.use("user")]).then(function (r) {
+      db = r[0];
+      var user = r[1];
+      if (!db || !user) return null;
+      return user.id();
+    }).then(function (id) {
+      if (!id || !db) return;
+      uid = id; remote = true;
+      intro.textContent = "Your answers are saved to your claude.ai account as you go, so you can continue on any computer.";
+      if (started) syncRemote().then(function () { setBadge(); render(); });
+    }, function () {});
+  }
+})();
+</script>

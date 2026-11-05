@@ -39,8 +39,15 @@ exported to a JSON file; annotators use IDs (A1, A2), not names.
 uv run python scripts/make_annotation.py --images data/images
 ```
 
-This writes `annotation/faultline_check.html` (one file, photos included, about 35 MB).
-Open it in Chrome or Firefox; it works offline. When both annotators have finished, put
+This writes `annotation/faultline_check.html` (one file, photos included, about 28 MB).
+Open it in Chrome or Firefox; it works offline.
+
+A hosted version (`scripts/make_annotation_site.py`, built from that file so the photos
+are identical) runs from one link in any browser. When the annotator is signed in with
+write access it saves every answer to their account as they go (store path
+`ann/<viewer id>/items/<record id>`; only the owner reads all annotators' answers), so
+they can switch computers; otherwise it keeps answers in the browser and offers Export,
+like the single file. When both annotators have finished, put
 their exported files in `annotation/results/` and run:
 
 ```
