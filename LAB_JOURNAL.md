@@ -312,3 +312,18 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   detection 67%, from image 34%, controls 100%), but 32% of attribution reports were
   unparsed. Added a positional reading of exactly five unlabeled lines (scoring only,
   tested on the real output); it changes no earlier result.
+
+## 2026-11-05
+
+**Spark phase 1 nearly complete**
+- First 1,000 records done for ten models; Qwen2.5-VL-32B running (26.6 s/record, end of
+  phase 1 about 15:30 Spark time). Measured s/record: Qwen3-VL-2B 1.3, Qwen2.5-VL-3B 3.0,
+  SmolVLM2 3.9, Qwen3-VL-4B 4.3, InternVL3-2B 4.5, Qwen3-VL-30B-A3B 7.2, Qwen3-VL-8B 7.3,
+  Qwen2.5-VL-7B 7.5, InternVL3-8B 12.5, Qwen3-VL-32B 25.9. The mixture-of-experts model
+  runs at 8B speed. Phase 2 (remaining 1,001 records each) estimated at about 29 h;
+  everything about Nov 6, 21:00 Spark time.
+- Power-cut safety: each record is now forced to disk (fsync) when written, so a power cut
+  loses at most the record in progress; the queue runs from the local model cache
+  (HF_HUB_OFFLINE) so it does not wait for the network; optional @reboot auto-resume via
+  crontab (scripts/spark/install_autoresume.sh). Results do not change on resume: records
+  are independent and decoding is greedy.

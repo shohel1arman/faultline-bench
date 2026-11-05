@@ -134,6 +134,7 @@ def run(backend, records, image_dir, out_path, model_key, max_side, load_image, 
                    "probes": probes, "error": err}
             f.write(json.dumps(row) + "\n")
             f.flush()
+            os.fsync(f.fileno())  # on disk now, so a power cut loses at most the record in progress
             if err:
                 print(f"[{rec['id']}] {err}")
             if i % log_every == 0 or i == len(todo):

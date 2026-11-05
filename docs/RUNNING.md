@@ -99,6 +99,16 @@ on all 2,001, smallest models first and the two 32B models last. A model that fa
 reported in the log and the queue moves on. After a restart, run the `nohup` command again;
 finished records are skipped.
 
+Each record is written to disk as soon as it finishes, so a power cut loses at most the
+record in progress. To start the queue by itself two minutes after every boot:
+
+```
+bash scripts/spark/install_autoresume.sh
+```
+
+Remove it when the runs are finished (`bash scripts/spark/uninstall_autoresume.sh`). The
+queue runs offline from the local model cache; set `FAULTLINE_ONLINE=1` to allow downloads.
+
 ### Saving results
 
 ```

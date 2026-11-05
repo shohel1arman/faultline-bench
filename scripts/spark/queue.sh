@@ -8,6 +8,9 @@
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 cd "$(dirname "$0")/../.." || exit 1
 mkdir -p outputs/spark
+# every model is already in the local cache after phase 1; do not depend on the network,
+# so the queue also resumes after a power cut before the connection is back
+if [ -z "$FAULTLINE_ONLINE" ]; then export HF_HUB_OFFLINE=1; fi
 echo "=== queue start $(date '+%Y-%m-%d %H:%M:%S')" >> outputs/spark/queue.log
 MODELS=internvl3-2b,qwen3vl-2b,qwen25vl-3b,qwen3vl-4b,smolvlm2-2b,qwen25vl-7b,internvl3-8b,qwen3vl-8b,qwen3vl-30b-a3b,qwen3vl-32b,qwen25vl-32b
 CMD=(uv run python scripts/run_queue.py --device cuda:0 --models-config configs/models_spark.toml
