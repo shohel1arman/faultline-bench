@@ -327,3 +327,13 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   (HF_HUB_OFFLINE) so it does not wait for the network; optional @reboot auto-resume via
   crontab (scripts/spark/install_autoresume.sh). Results do not change on resume: records
   are independent and decoding is greedy.
+
+**Human check ready**
+- Second annotator found. 500 records (50 per conflict cell, 50 controls) from the first
+  1,000; one self-contained HTML page with the photos embedded, answers kept in the
+  browser and exported as JSON. Question first without the description (avoids text
+  bias, gives a human image-only baseline), then the description judgement, then
+  obviousness. "Can't tell" also covers questions where more than one option is true.
+- Scoring: human accuracy per cell, agreed label problems and valid rate, Cohen's kappa,
+  Spearman of severity against rated obviousness. Page tested in headless Chromium
+  (answering by keyboard, reload keeps answers, export); scoring tested end to end.

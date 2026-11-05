@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FaultLine Human Check</title>
+<style>
+:root {
+  --bg: #f6f5f2; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6a66; --line: #dddbd5;
+  --accent: #2f5d8a; --accent-ink: #ffffff; --chosen: #e3edf7; --warn: #8a5a00; --warn-bg: #fff4dc;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1b1c1e; --panel: #25272a; --ink: #ecebe7; --muted: #a3a29d; --line: #3a3c40;
+    --accent: #7fb0e0; --accent-ink: #10161c; --chosen: #2c3b4b; --warn: #f0c060; --warn-bg: #3a3020;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 16px;
+  border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+header .grow { flex: 1; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; width: 160px; }
+.bar > div { height: 100%; background: var(--accent); width: 0; }
+main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, 1fr); gap: 16px;
+  padding: 16px; max-width: 1300px; margin: 0 auto; }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+.imgbox { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px;
+  display: flex; justify-content: center; align-items: center; min-height: 300px; }
+.imgbox img { max-width: 100%; max-height: 72vh; display: block; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px;
+  margin-bottom: 12px; }
+.panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
+  margin: 0 0 8px; font-weight: 600; }
+.q { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+.desc { font-size: 18px; margin: 4px 0 12px; padding: 8px 10px; border-left: 3px solid var(--accent);
+  background: var(--bg); }
+.opts { display: grid; gap: 6px; }
+button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 6px; padding: 8px 12px; cursor: pointer; text-align: left; }
+button:hover { border-color: var(--accent); }
+button.chosen { background: var(--chosen); border-color: var(--accent); font-weight: 600; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.key { display: inline-block; min-width: 1.6em; color: var(--muted); font-variant-numeric: tabular-nums; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
+.hidden { display: none; }
+.nav { display: flex; gap: 8px; flex-wrap: wrap; }
+.note { color: var(--muted); font-size: 14px; }
+.banner { background: var(--warn-bg); color: var(--warn); padding: 8px 16px; font-size: 14px; }
+#intro { max-width: 760px; margin: 24px auto; padding: 0 16px; }
+#intro .panel { padding: 20px 24px; }
+#intro li { margin-bottom: 6px; }
+input[type=text] { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); color: var(--ink); width: 180px; }
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <div class="panel">
+    <h1 style="margin-top:0">FaultLine human check</h1>
+    <p>You will see <b id="nitems"></b> photos. For each one:</p>
+    <ol>
+      <li><b>Answer the question from the photo.</b> Pick the option that is true in the photo. Choose
+        <i>Can't tell</i> if the photo does not let you decide (object too small, hidden, several objects
+        the question could mean) or if more than one option is true. You see the description only after
+        this step.</li>
+      <li><b>Does the description match the photo?</b> Read the whole description. Answer <i>No</i> if
+        any part of it is false for the photo.</li>
+      <li>If it does not match: <b>how obvious is the mistake?</b> <i>Obvious</i> = you notice it at once;
+        <i>moderate</i> = you notice it after looking; <i>subtle</i> = you need to look closely.</li>
+    </ol>
+    <p><b>Left, right, above, below</b> are as seen in the photo (the viewer's left), not the object's own
+      left. <b>Colours</b> mean the main colour of the object.</p>
+    <p class="note">Keys: 1&ndash;4 options, 5 can't tell; Y / N / C for the description; 1 / 2 / 3 for how
+      obvious; &larr; &rarr; to move. Your answers are kept in this browser. Use <b>Export</b> to save a file
+      at least every 100 items and at the end, and send that file back.</p>
+    <p>Annotator ID (use the ID you were given, for example A1 or A2, not your name):</p>
+    <div class="row">
+      <input id="who" type="text" placeholder="A1" autocomplete="off">
+      <button class="primary" id="start">Start</button>
+      <label class="note" style="align-self:center">or restore a saved file:
+        <input id="importfile" type="file" accept=".json,application/json"></label>
+    </div>
+    <p id="introerr" class="note" style="color:var(--warn)"></p>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <b>FaultLine check</b>
+    <span class="note" id="whoami"></span>
+    <span class="grow"></span>
+    <span id="progress" class="note"></span>
+    <div class="bar"><div id="barfill"></div></div>
+    <button id="exportbtn">Export</button>
+    <button id="helpbtn">Instructions</button>
+  </header>
+  <div id="backup" class="banner hidden">You have finished another 100 items. Please click Export to save a backup file.</div>
+  <main>
+    <div class="imgbox"><img id="img" alt="photo to check"></div>
+    <div>
+      <div class="panel">
+        <h2>Step 1 &middot; answer from the photo</h2>
+        <div class="q" id="question"></div>
+        <div class="opts" id="opts"></div>
+      </div>
+      <div class="panel hidden" id="step2">
+        <h2>Step 2 &middot; does the description match the photo?</h2>
+        <div class="desc" id="text"></div>
+        <div class="row">
+          <button data-m="yes"><span class="key">Y</span>Yes, it matches</button>
+          <button data-m="no"><span class="key">N</span>No, something is wrong</button>
+          <button data-m="cant_tell"><span class="key">C</span>Can't tell</button>
+        </div>
+      </div>
+      <div class="panel hidden" id="step3">
+        <h2>Step 3 &middot; how obvious is the mistake?</h2>
+        <div class="row">
+          <button data-o="obvious"><span class="key">1</span>Obvious</button>
+          <button data-o="moderate"><span class="key">2</span>Moderate</button>
+          <button data-o="subtle"><span class="key">3</span>Subtle</button>
+        </div>
+      </div>
+      <div class="nav">
+        <button id="prev">&larr; Previous</button>
+        <button id="next">Next &rarr;</button>
+        <button id="jump">First unfinished</button>
+      </div>
+      <p class="note" id="itemid"></p>
+    </div>
+  </main>
+</div>
+
+<script id="items" type="application/json">/*ITEMS*/</script>
+<script>
+(function () {
+  "use strict";
+  var ITEMS = JSON.parse(document.getElementById("items").textContent);
+  var PAGE = "/*PAGE_VERSION*/";
+  var LETTERS = ["A", "B", "C", "D", "E", "F"];
+  var who = null, answers = {}, idx = 0, store = null;
+  try { store = window.localStorage; } catch (e) { store = null; }
+
+  function $(id) { return document.getElementById(id); }
+  function key() { return "faultline_check_" + PAGE + "_" + who; }
+  function save() {
+    if (!store) return;
+    try { store.setItem(key(), JSON.stringify({ idx: idx, answers: answers })); } catch (e) {}
+  }
+  function load() {
+    if (!store) return;
+    try {
+      var s = JSON.parse(store.getItem(key()) || "null");
+      if (s) { answers = s.answers || {}; idx = s.idx || 0; }
+    } catch (e) {}
+  }
+  function complete(a) {
+    return !!a && !!a.choice && !!a.matches && (a.matches !== "no" || !!a.obvious);
+  }
+  function nDone() {
+    var n = 0;
+    ITEMS.forEach(function (it) { if (complete(answers[it.id])) n++; });
+    return n;
+  }
+
+  function render() {
+    var it = ITEMS[idx], a = answers[it.id] || {};
+    if (!a.shown) { a.shown = new Date().toISOString(); answers[it.id] = a; }
+    $("img").src = it.image;
+    $("question").textContent = it.question;
+    var opts = $("opts");
+    opts.innerHTML = "";
+    it.options.forEach(function (o, k) {
+      var b = document.createElement("button");
+      b.innerHTML = '<span class="key">' + (k + 1) + "</span>" + LETTERS[k] + ". ";
+      b.appendChild(document.createTextNode(o));
+      if (a.choice === o) b.className = "chosen";
+      b.onclick = function () { setChoice(o); };
+      opts.appendChild(b);
+    });
+    var c = document.createElement("button");
+    c.innerHTML = '<span class="key">5</span>Can\'t tell, or more than one is true';
+    if (a.choice === "cant_tell") c.className = "chosen";
+    c.onclick = function () { setChoice("cant_tell"); };
+    opts.appendChild(c);
+
+    $("step2").classList.toggle("hidden", !a.choice);
+    $("text").textContent = it.text;
+    document.querySelectorAll("[data-m]").forEach(function (b) {
+      b.classList.toggle("chosen", a.matches === b.getAttribute("data-m"));
+    });
+    $("step3").classList.toggle("hidden", a.matches !== "no");
+    document.querySelectorAll("[data-o]").forEach(function (b) {
+      b.classList.toggle("chosen", a.obvious === b.getAttribute("data-o"));
+    });
+    var done = nDone();
+    $("progress").textContent = "item " + (idx + 1) + " of " + ITEMS.length + " · " + done + " done";
+    $("barfill").style.width = (100 * done / ITEMS.length) + "%";
+    $("itemid").textContent = "record " + it.id;
+    $("backup").classList.toggle("hidden", !(done > 0 && done % 100 === 0 && answers._lastExport !== done));
+  }
+
+  function cur() { var id = ITEMS[idx].id; answers[id] = answers[id] || {}; return answers[id]; }
+  function setChoice(v) { var a = cur(); a.choice = v; save(); render(); }
+  function setMatches(v) {
+    var a = cur(); if (!a.choice) return;
+    a.matches = v; if (v !== "no") delete a.obvious;
+    finishIfComplete(a);
+  }
+  function setObvious(v) {
+    var a = cur(); if (a.matches !== "no") return;
+    a.obvious = v; finishIfComplete(a);
+  }
+  function finishIfComplete(a) {
+    save(); render();
+    if (complete(a)) {
+      a.finished = new Date().toISOString(); save();
+      setTimeout(function () { if (idx < ITEMS.length - 1) { idx++; save(); render(); } }, 250);
+    }
+  }
+  function go(d) { idx = Math.max(0, Math.min(ITEMS.length - 1, idx + d)); save(); render(); }
+  function jump() {
+    for (var k = 0; k < ITEMS.length; k++) {
+      if (!complete(answers[ITEMS[k].id])) { idx = k; save(); render(); return; }
+    }
+    alertDone();
+  }
+  function alertDone() { $("progress").textContent = "all " + ITEMS.length + " items done — click Export"; }
+
+  function exportFile() {
+    var out = { annotator: who, page_version: PAGE, exported: new Date().toISOString(),
+      n_items: ITEMS.length, n_done: nDone(), answers: {} };
+    ITEMS.forEach(function (it) { if (answers[it.id]) out.answers[it.id] = answers[it.id]; });
+    answers._lastExport = out.n_done; save();
+    var blob = new Blob([JSON.stringify(out, null, 1)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "faultline_check_" + who + "_" + out.n_done + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    render();
+  }
+
+  function begin() {
+    var w = $("who").value.trim().replace(/[^A-Za-z0-9_-]/g, "");
+    if (!w) { $("introerr").textContent = "Please enter your annotator ID."; return; }
+    who = w; load(); startApp();
+  }
+  function startApp() {
+    $("intro").classList.add("hidden"); $("app").classList.remove("hidden");
+    $("whoami").textContent = "annotator " + who;
+    render();
+  }
+
+  $("nitems").textContent = ITEMS.length;
+  $("start").onclick = begin;
+  $("who").addEventListener("keydown", function (e) { if (e.key === "Enter") begin(); });
+  $("importfile").onchange = function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      try {
+        var d = JSON.parse(r.result);
+        if (d.page_version !== PAGE) { $("introerr").textContent = "That file is from a different version of this page."; return; }
+        who = d.annotator; answers = d.answers || {}; idx = 0; save(); startApp(); jump();
+      } catch (err) { $("introerr").textContent = "Could not read that file."; }
+    };
+    r.readAsText(f);
+  };
+  $("exportbtn").onclick = exportFile;
+  $("helpbtn").onclick = function () { $("app").classList.add("hidden"); $("intro").classList.remove("hidden");
+    $("start").textContent = "Continue"; $("who").value = who; };
+  $("prev").onclick = function () { go(-1); };
+  $("next").onclick = function () { go(1); };
+  $("jump").onclick = jump;
+  document.querySelectorAll("[data-m]").forEach(function (b) {
+    b.onclick = function () { setMatches(b.getAttribute("data-m")); };
+  });
+  document.querySelectorAll("[data-o]").forEach(function (b) {
+    b.onclick = function () { setObvious(b.getAttribute("data-o")); };
+  });
+  document.addEventListener("keydown", function (e) {
+    if ($("app").classList.contains("hidden") || e.target.tagName === "INPUT") return;
+    var a = cur(), it = ITEMS[idx], k = e.key.toLowerCase();
+    if (k === "arrowleft") return go(-1);
+    if (k === "arrowright") return go(1);
+    if (a.matches === "no" && !a.obvious && ["1", "2", "3"].indexOf(k) >= 0) {
+      return setObvious(["obvious", "moderate", "subtle"][+k - 1]);
+    }
+    if (!a.choice || !a.matches) {
+      var n = +k;
+      if (n >= 1 && n <= it.options.length && !a.choice) return setChoice(it.options[n - 1]);
+      if (k === "5" && !a.choice) return setChoice("cant_tell");
+    }
+    if (a.choice && !a.matches) {
+      if (k === "y") return setMatches("yes");
+      if (k === "n") return setMatches("no");
+      if (k === "c") return setMatches("cant_tell");
+    }
+  });
+})();
+</script>
+</body>
+</html>

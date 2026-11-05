@@ -211,5 +211,7 @@ From the outline, to verify: Deng et al. CVPR 2025, CLASH, MC2, Nguyen et al. 20
   memory bandwidth, not measured; the 32B models dominate). Freeze all runs by Nov 11.
 - Cross-platform agreement analysis (Mac float16 vs Spark bfloat16, four small models).
 - Scaling figure: metric vs parameters for Qwen3-VL, with the other families as points.
-- Human check of 500 samples by two annotators (agreement, error rate per cell).
+- Human check of 500 samples by two annotators (A1, A2): page and scoring ready
+  (`docs/ANNOTATION.md`); about 3 to 4 hours per annotator. Gives human accuracy per
+  cell, the estimated valid rate, agreement (kappa) and the severity correlation.
 - OpenReview profiles for all authors before the Nov 10 registration.
