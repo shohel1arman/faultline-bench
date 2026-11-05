@@ -100,6 +100,29 @@ Readings: detection falls with severity for attribute and object, which supports
 severity design; relations are hard to perceive at all (near the 25% guessing rate at
 S3), so relation results must be read through the perceived-only metric.
 
+### Spark bfloat16, first 1,000 records, nine models (preliminary, 2026-11-05)
+
+900 conflicts and 100 controls per model (false-flag rates have wide intervals at n=100).
+The two 32B models were still running.
+
+| Model | Perceive | Flags | False flags | Det. adj. | From image | Focus | Delay | Verbalize | Wrong input | Coupling D |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Qwen3-VL-2B | 79.1 | 76.0 | 17.0 | 59.0 | 36.8 | 43.6 | 25.9 | 35.4 | 59.3 | +27.7 |
+| Qwen3-VL-4B | 84.0 | 95.6 | 34.0 | 61.6 | 40.2 | 76.0 | 70.2 | 81.1 | 1.0 | +36.9 |
+| Qwen3-VL-8B | 83.3 | 97.0 | 43.0 | 54.0 | 54.1 | 85.7 | 70.1 | 84.0 | 28.3 | +40.5 |
+| Qwen3-VL-30B-A3B | 85.1 | 96.1 | 37.0 | 59.1 | 58.2 | 80.6 | 63.9 | 79.7 | 4.0 | +54.6 |
+| InternVL3-2B | 74.4 | 71.6 | 20.0 | 51.6 | 17.8 | 23.6 | 31.7 | 54.7 | 17.4 | +15.6 |
+| InternVL3-8B | 83.4 | 94.4 | 36.0 | 58.4 | 51.0 | 74.0 | 75.2 | 76.4 | 3.4 | +34.9 |
+| Qwen2.5-VL-3B | 76.7 | 95.7 | 47.0 | 48.7 | 18.7 | 26.6 | 25.8 | 24.6 | 64.7 | +19.5 |
+| Qwen2.5-VL-7B | 80.2 | 99.0 | 66.0 | 33.0 | 65.1 | 87.0 | 71.9 | 82.3 | 20.7 | +54.5 |
+| SmolVLM2-2.2B | 69.2 | 85.1 | 60.0 | 25.1 | 7.1 | 9.7 | 13.8 | 12.3 | 30.2 | +5.7 |
+
+First reading of the scaling question: answering from the image rises with scale in every
+family (Qwen3-VL 36.8 -> 40.2 -> 54.1 -> 58.2; InternVL3 17.8 -> 51.0; Qwen2.5-VL 18.7 ->
+65.1), while adjusted detection does not (raw flagging saturates near 95-99% and false
+flags grow with it). Larger models do not notice conflicts better; they act on them more.
+Wait for the 32B models and the full 2,001 records before writing this as a claim.
+
 ### Four small models, full core set, Mac float16 run (cross-platform check)
 
 `scripts/analyze.py` on all 2,001 records of each model (1,800 conflicts, 201 controls).
