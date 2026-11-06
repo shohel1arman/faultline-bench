@@ -77,7 +77,7 @@ def main():
             print(f"  {k:<22} {100 * v:+6.1f}" if k.startswith("diff_") else f"  {k:<22} {100 * v:6.1f}%")
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=keys)
+        w = csv.DictWriter(f, fieldnames=keys, lineterminator="\n")
         w.writeheader()
         w.writerows(table)
     print(f"\nwrote {args.out}")

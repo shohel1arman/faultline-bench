@@ -161,7 +161,7 @@ Readings:
   no" in 86% of reports (flags 94% in the detection probe), Qwen3-VL-4B in nearly all,
   Qwen3-VL-2B mostly. Their "words located" and type scores are low for that reason.
   Only Qwen3-VL-32B (54%) and Qwen2.5-VL-3B (67%) usually name the text as the wrong input.
-- Cross-platform check (): the four small models on the
+- Cross-platform check (`results/platform_agreement.csv`): the four small models on the
   Mac (float16) and the Spark (bfloat16) give the same multiple-choice letter on 98.6 to
   99.5% of records and the same detection decision on 98.6 to 99.8%; headline metrics
   differ by at most 1.5 points.
