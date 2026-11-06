@@ -100,28 +100,71 @@ Readings: detection falls with severity for attribute and object, which supports
 severity design; relations are hard to perceive at all (near the 25% guessing rate at
 S3), so relation results must be read through the perceived-only metric.
 
-### Spark bfloat16, first 1,000 records, nine models (preliminary, 2026-11-05)
+### Spark bfloat16, all 2,001 records, ten models (2026-11-06)
 
-900 conflicts and 100 controls per model (false-flag rates have wide intervals at n=100).
-The two 32B models were still running.
+1,800 conflicts and 201 controls per model. Qwen2.5-VL-32B still running. Includes the
+fourth parser fix (copied option lists are no answer). 95% image-clustered bootstrap.
 
-| Model | Perceive | Flags | False flags | Det. adj. | From image | Focus | Delay | Verbalize | Wrong input | Coupling D |
+| Model | Perceive | Flags | False flags | Det. adj. | From image | From image if perceived | Focus | Delay | Check | Verbalize |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Qwen3-VL-2B | 79.1 | 76.0 | 17.0 | 59.0 | 36.8 | 43.6 | 25.9 | 35.4 | 59.3 | +27.7 |
-| Qwen3-VL-4B | 84.0 | 95.6 | 34.0 | 61.6 | 40.2 | 76.0 | 70.2 | 81.1 | 1.0 | +36.9 |
-| Qwen3-VL-8B | 83.3 | 97.0 | 43.0 | 54.0 | 54.1 | 85.7 | 70.1 | 84.0 | 28.3 | +40.5 |
-| Qwen3-VL-30B-A3B | 85.1 | 96.1 | 37.0 | 59.1 | 58.2 | 80.6 | 63.9 | 79.7 | 4.0 | +54.6 |
-| InternVL3-2B | 74.4 | 71.6 | 20.0 | 51.6 | 17.8 | 23.6 | 31.7 | 54.7 | 17.4 | +15.6 |
-| InternVL3-8B | 83.4 | 94.4 | 36.0 | 58.4 | 51.0 | 74.0 | 75.2 | 76.4 | 3.4 | +34.9 |
-| Qwen2.5-VL-3B | 76.7 | 95.7 | 47.0 | 48.7 | 18.7 | 26.6 | 25.8 | 24.6 | 64.7 | +19.5 |
-| Qwen2.5-VL-7B | 80.2 | 99.0 | 66.0 | 33.0 | 65.1 | 87.0 | 71.9 | 82.3 | 20.7 | +54.5 |
-| SmolVLM2-2.2B | 69.2 | 85.1 | 60.0 | 25.1 | 7.1 | 9.7 | 13.8 | 12.3 | 30.2 | +5.7 |
+| Qwen3-VL-2B | 78.1 | 76.3 | 16.9 | 59.4 | 39.4 | 47.4 | 45.5 | 27.9 | 26.3 | 37.1 |
+| Qwen3-VL-4B | 83.3 | 94.8 | 37.3 | 57.5 | 41.3 | 47.0 | 76.0 | 69.8 | 71.9 | 80.0 |
+| Qwen3-VL-8B | 82.4 | 96.3 | 44.8 | 51.6 | 54.3 | 62.0 | 84.2 | 69.3 | 78.4 | 82.8 |
+| Qwen3-VL-30B-A3B | 82.2 | 95.2 | 39.8 | 55.4 | 59.0 | 66.5 | 79.4 | 63.0 | 64.3 | 78.8 |
+| Qwen3-VL-32B | 85.7 | 97.7 | 53.7 | 43.9 | 43.1 | 48.2 | 86.3 | 64.3 | 79.2 | 85.9 |
+| InternVL3-2B | 73.6 | 72.0 | 19.9 | 52.1 | 16.9 | 22.7 | 22.4 | 30.9 | 39.8 | 52.9 |
+| InternVL3-8B | 82.3 | 93.9 | 35.8 | 58.1 | 49.4 | 55.6 | 72.9 | 74.3 | 75.5 | 75.2 |
+| Qwen2.5-VL-3B | 76.8 | 94.6 | 47.3 | 47.3 | 18.9 | 24.4 | 26.0 | 24.8 | 20.3 | 23.4 |
+| Qwen2.5-VL-7B | 79.5 | 98.2 | 67.2 | 31.1 | 65.0 | 73.4 | 84.8 | 71.1 | 75.2 | 80.6 |
+| SmolVLM2-2.2B | 68.6 | 84.4 | 62.2 | 22.3 | 7.8 | 11.4 | 9.6 | 13.7 | 18.1 | 13.3 |
 
-First reading of the scaling question: answering from the image rises with scale in every
-family (Qwen3-VL 36.8 -> 40.2 -> 54.1 -> 58.2; InternVL3 17.8 -> 51.0; Qwen2.5-VL 18.7 ->
-65.1), while adjusted detection does not (raw flagging saturates near 95-99% and false
-flags grow with it). Larger models do not notice conflicts better; they act on them more.
-Wait for the 32B models and the full 2,001 records before writing this as a claim.
+| Model | Structure | Check | Report | Words located | Type | Wrong input | Severity | All four | Coupling D | Controls |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Qwen3-VL-2B | -11.6 | -1.6 | +10.8 | 12.3 | 37.2 | 0.0 | 7.8 | 0.0 | +28.1 | 97.0 |
+| Qwen3-VL-4B | +28.6 | +2.1 | +8.1 | 87.3 | 82.2 | 1.1 | 32.9 | 0.5 | +39.1 | 99.0 |
+| Qwen3-VL-8B | +15.0 | +9.1 | +4.4 | 87.9 | 77.5 | 28.2 | 31.9 | 9.3 | +46.9 | 97.5 |
+| Qwen3-VL-30B-A3B | +4.0 | +1.3 | +14.5 | 77.6 | 71.8 | 3.4 | 30.1 | 1.4 | +53.4 | 98.5 |
+| Qwen3-VL-32B | +21.2 | +14.9 | +6.7 | 93.3 | 78.9 | 54.2 | 33.3 | 16.4 | +39.3 | 98.0 |
+| InternVL3-2B | +14.0 | +8.9 | +13.1 | 70.8 | 39.9 | 0.0 | 20.7 | 0.0 | +14.4 | 100.0 |
+| InternVL3-8B | +24.8 | +1.2 | -0.3 | 11.8 | 10.1 | 3.8 | 26.2 | 1.3 | +41.9 | 99.0 |
+| Qwen2.5-VL-3B | +5.9 | -4.6 | +3.2 | 85.9 | 53.6 | 67.0 | 30.2 | 10.6 | +20.0 | 100.0 |
+| Qwen2.5-VL-7B | +6.1 | +4.1 | +5.4 | 81.5 | 67.7 | 21.1 | 28.4 | 5.7 | +56.6 | 97.0 |
+| SmolVLM2-2.2B | +5.8 | +4.4 | -4.7 | 66.9 | 0.2 | 0.0 | 1.1 | 0.0 | +5.9 | 100.0 |
+
+- Qwen3-VL-2B: adjusted detection 59.4 [53.6, 64.5]; from image 39.4 [37.2, 41.8]
+- Qwen3-VL-4B: adjusted detection 57.5 [50.7, 64.4]; from image 41.3 [38.9, 43.7]
+- Qwen3-VL-8B: adjusted detection 51.6 [44.5, 58.4]; from image 54.3 [52.0, 56.8]
+- Qwen3-VL-30B-A3B: adjusted detection 55.4 [48.2, 62.2]; from image 59.0 [56.6, 61.3]
+- Qwen3-VL-32B: adjusted detection 43.9 [36.1, 51.1]; from image 43.1 [40.8, 45.5]
+- InternVL3-2B: adjusted detection 52.1 [46.3, 57.8]; from image 16.9 [15.2, 18.8]
+- InternVL3-8B: adjusted detection 58.1 [51.1, 65.0]; from image 49.4 [47.0, 51.8]
+- Qwen2.5-VL-3B: adjusted detection 47.3 [40.1, 54.2]; from image 18.9 [17.1, 20.9]
+- Qwen2.5-VL-7B: adjusted detection 31.1 [24.2, 37.8]; from image 65.0 [62.8, 67.3]
+- SmolVLM2-2.2B: adjusted detection 22.3 [15.1, 29.0]; from image 7.8 [6.6, 9.2]
+
+Readings:
+
+- The gap holds for all ten: every model flags most conflicts (72-98%) and still answers
+  from the text on many of them; flags minus answers-from-image is 33 to 77 points.
+- Scale does not clean it up. Answering from the image rises from 2B to 8B in every family
+  (Qwen3-VL 39 -> 41 -> 54; InternVL3 17 -> 49; Qwen2.5-VL 19 -> 65) and to 59 for the
+  30B-A3B, but the dense Qwen3-VL-32B falls back to 43. It is not unable: told to rely on
+  the image it reaches 86, the highest of all. Larger models follow the image when asked
+  more than they choose it by default. Wait for Qwen2.5-VL-32B before writing the claim.
+- Larger models flag more faithful descriptions as wrong (Qwen3-VL false flags 17 -> 37 ->
+  45 -> 40 -> 54; Qwen2.5-VL 47 -> 67), so adjusted detection does not improve with scale
+  and is lowest for the largest Qwen3-VL (44).
+- Turn structure explains most of the verbalize gain for most models; the model's own
+  report adds -5 to +15 points. Qwen3-VL-2B is the exception: the delay control lowers
+  its image answers (-11.6).
+- Self-reports contradict detection answers in three models: InternVL3-8B writes "Error:
+  no" in 86% of reports (flags 94% in the detection probe), Qwen3-VL-4B in nearly all,
+  Qwen3-VL-2B mostly. Their "words located" and type scores are low for that reason.
+  Only Qwen3-VL-32B (54%) and Qwen2.5-VL-3B (67%) usually name the text as the wrong input.
+- Cross-platform check (): the four small models on the
+  Mac (float16) and the Spark (bfloat16) give the same multiple-choice letter on 98.6 to
+  99.5% of records and the same detection decision on 98.6 to 99.8%; headline metrics
+  differ by at most 1.5 points.
 
 ### Four small models, full core set, Mac float16 run (cross-platform check)
 
@@ -204,6 +247,10 @@ severity grading; object severity barely changes detection.
   read by position. Qwen3-VL-2B answers the attribution format this way (32% of its first
   539 records were unparsed). No existing Mac or Spark result changes: no other model
   produced such a reply.
+- Fourth parser fix (2026-11-06, scoring only): a field that copies the option list
+  ("Wrong input: text, image, or none") is no answer; before, its first word counted.
+  Changes 1,190 Qwen3-VL-2B, 387 InternVL3-2B, 597 + 1,068 SmolVLM2 and 42 Qwen2.5-VL-7B
+  fields; every changed value was checked to be a copied list.
 - Prompts are frozen at p1.1 for the Spark run, including the attribution prompt that
   Qwen3-VL-4B answers inconsistently, so the Mac and Spark runs stay comparable and no
   prompt is tuned on results.

@@ -135,14 +135,25 @@ def _field(output, label):
 
 
 def _first_class(value, table):
+    """The first class named in a field, or None if the field only repeats the choices.
+
+    Some models copy the option list instead of choosing ("Wrong input: text, image, or
+    none"); taking its first word would score a guess as an answer. A value naming two or
+    more classes joined by "or" or "/", or three or more classes, is treated as no answer.
+    """
     if value is None:
         return None
-    ws = words(value)
-    for w in ws:
+    found = []
+    for w in words(value):
         for cls, keys in table.items():
-            if w in keys:
-                return cls
-    return None
+            if w in keys and cls not in found:
+                found.append(cls)
+    if not found:
+        return None
+    low = f" {value.lower()} "
+    if len(found) >= 3 or (len(found) == 2 and (" or " in low or "/" in low)):
+        return None
+    return found[0]
 
 
 def _unlabeled(output):

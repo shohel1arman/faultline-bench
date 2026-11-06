@@ -437,3 +437,16 @@ def test_attribution_reads_unlabeled_five_line_reply():
     # prose, or lines with labels of another kind, are not read by position
     assert parse.attribution("The image shows a bus.\nIt is red.")["parsed"] is False
     assert parse.attribution("A: yes\nB: text\nC: object\nD: bus\nE: subtle")["parsed"] is False
+
+
+def test_attribution_ignores_a_copied_option_list():
+    # real Qwen3-VL-2B output: the choices for "Wrong input" copied instead of one chosen
+    a = parse.attribution("Error: no\nWrong input: text, image, or none\nError type: none\nHow obvious: none")
+    assert a["input"] is None and a["error"] == "no" and a["type"] == "none"
+    # real SmolVLM2 echo of the type choices
+    b = parse.attribution("Error type: object, attribute, relation, or none\nWrong words: the ball")
+    assert b["type"] is None
+    assert parse.attribution("Error: yes or no")["error"] is None
+    # a chosen answer with a short explanation still counts
+    c = parse.attribution("Error: yes\nWrong input: text (the image shows a cat)\nError type: object")
+    assert (c["error"], c["input"], c["type"]) == ("yes", "text", "object")

@@ -344,3 +344,18 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   model only to skip it (up to 7 minutes each for the 30-32B models). `run_eval.py` now
   exits before loading the model, and before rewriting its settings file, when every
   selected record is already done.
+
+## 2026-11-06
+
+**Ten models complete on the Spark; Qwen2.5-VL-32B last**
+- I misread an old progress line as a stalled run and the queue was stopped and restarted
+  at 13:44; it cost one model load (about 10 minutes), no results. New
+  `scripts/spark/status.sh` and `scripts/progress.py` show records saved per model, the
+  process state and GPU use, so the log tail is no longer the only signal.
+- Full analysis of the ten finished models (2,001 records each): see PAPER_NOTES. Scale
+  raises answering from the image up to 8B and 30B-A3B, but Qwen3-VL-32B drops back while
+  being the most steerable; false flags grow with scale.
+- Found and fixed a parser problem: fields that copy the option list were scored by their
+  first word (Qwen3-VL-2B "Wrong input" accuracy was 61% for this reason; now 0%).
+- Cross-platform check on the four small models: 98.6-99.5% identical multiple-choice
+  answers, headline metrics within 1.5 points (`scripts/compare_platforms.py`).
