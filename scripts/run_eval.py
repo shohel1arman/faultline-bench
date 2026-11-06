@@ -24,7 +24,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 from faultline.models import HFBackend, load_image, mps_version_problem  # noqa: E402
 from faultline.prompts import PROMPT_VERSION  # noqa: E402
-from faultline.runner import run, select  # noqa: E402
+from faultline.runner import done_ids, run, select  # noqa: E402
 from faultline.schema import read_jsonl  # noqa: E402
 
 
@@ -92,6 +92,12 @@ def main():
         problem = mps_version_problem(torch.__version__, platform.mac_ver()[0])
         if problem:
             sys.exit(problem)
+
+    # nothing left to do (for example the queue restarting after a power cut): skip loading
+    # the model, which takes up to 7 minutes for the 32B models
+    if not only and not ({r["id"] for r in records} - done_ids(out)):
+        print(f"{len(records)} selected, all already done; model not loaded")
+        return
 
     meta = {"model": args.model, **cfg, "prompt_version": PROMPT_VERSION,
             "transformers": transformers.__version__, "torch": torch.__version__,

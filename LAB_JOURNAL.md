@@ -337,3 +337,10 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
 - Scoring: human accuracy per cell, agreed label problems and valid rate, Cohen's kappa,
   Spearman of severity against rated obviousness. Page tested in headless Chromium
   (answering by keyboard, reload keeps answers, export); scoring tested end to end.
+
+**Power cut on the Spark (evening)**
+- The Spark lost power; the queue came back by itself after the reboot (cron @reboot) at
+  19:50. Restarting walks the queue from phase 1 again, which reloaded every finished
+  model only to skip it (up to 7 minutes each for the 30-32B models). `run_eval.py` now
+  exits before loading the model, and before rewriting its settings file, when every
+  selected record is already done.
