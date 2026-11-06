@@ -9,10 +9,10 @@
   "torch": "2.14.1+cu130",
   "gpu": "NVIDIA GB10",
   "platform": "Linux-7.0.0-1024-nvidia-aarch64-with-glibc2.39",
-  "started": "2026-11-04 20:31:52",
+  "started": "2026-11-06 02:06:09",
   "dataset": "data/faultline_v0.jsonl",
   "subset": "core",
-  "first": 1000,
+  "first": null,
   "only_probes": null,
-  "n_records": 1000
+  "n_records": 2001
 }
