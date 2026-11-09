@@ -400,3 +400,7 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   Rule-chosen record fl_01827, "The airplane is green" on a white airplane: all four
   shown models flag it; the 7-8B models answer white, both 32B models answer green, and
   all answer white when told to rely on the image or after their own report.
+
+**Method figure**
+- `scripts/make_method_figure.py`: (a) how a pair is built, with the teaser record as the
+  running example; (b) the six probe groups and what each measures.
