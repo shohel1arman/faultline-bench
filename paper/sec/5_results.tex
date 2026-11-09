@@ -1,0 +1,72 @@
+\section{Results}
+\label{sec:results}
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4.5pt}
+\input{tables/main}
+\caption{\textbf{Main results} on 1,800 conflicts and 201 controls per model (\%). Perc.: answers from the image with no description. Flag: flags the conflict; FA: flags a faithful control (lower is better); Det.: Flag minus FA. Res.: answers from the image with the description present; Res.$|$P: the same among conflicts the model perceives; ArbF: perceives and flags the conflict yet answers from the text (lower is better); Focus: Res. when told to rely on the image. Span/Input/Strict: attribution report names the edited words / names the text as the wrong input / gets all four fields right. Best in bold. 95\% image-clustered bootstrap intervals are at most $\pm$3.1 points for conflict metrics and $\pm$7.8 points for FA and Det.}
+\label{tab:main}
+\end{table*}
+
+\subsection{Noticing a conflict is not acting on it}
+\label{sec:gap}
+
+Every model reads the description almost perfectly when it is shown alone (text-only accuracy $\geq$99.7\%) and perceives the edited fact from the photo alone on 69--86\% of conflicts (\cref{tab:main}). Detection is high: nine of eleven models flag 84--98\% of conflicts, and the other two 72\% and 76\%. Yet resolution lags far behind, from 8\% (SmolVLM2) to 65\% (Qwen2.5-VL-7B), and conditioning on perception helps only partly: even on conflicts it perceives, the best model answers from the photo on 73\% and the weakest on 11\%.
+
+\Cref{fig:outcomes}a shows the joint outcome per conflict. For six of eleven models the largest outcome is a conflict the model flags but does not answer from the photo, between 33\% and 77\% of conflicts. Arbitration failure isolates this case: among conflicts a model both perceives and flags, it still answers from the text 26\% (Qwen2.5-VL-7B) to 88\% (SmolVLM2) of the time. Noticing and acting are coupled, since resolution is 6--57 points higher on conflicts a model flags than on those it does not, but the coupling is far from complete. Models answer 97--100\% of faithful controls correctly, so the low resolution is specific to conflicts.
+
+\begin{figure*}[t]
+\centering
+\begin{subfigure}[t]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/outcomes.pdf}
+\caption{Joint outcome on conflicts, sorted by the noticed-and-resolved share.}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/probes.pdf}
+\caption{Answers from the image under each resolution probe.}
+\end{subfigure}
+\caption{\textbf{Where conflicts go.} (a) ``Noticed'' means the detection probe flags the description; ``answered from image'' means the direct multiple-choice probe picks the photo's answer. (b) Each row shows one model under the direct question, the delayed question, the check prompt, its own error report, and the instruction to rely on the image; the grey bar spans the range.}
+\label{fig:outcomes}
+\end{figure*}
+
+\subsection{Scale changes the default, not the ability}
+\label{sec:scale}
+
+\Cref{fig:scaling} plots three quantities against model size. Answering from the image improves from the 2--4B to the 7--8B models in every family: by 46 points for Qwen2.5-VL (3B to 7B), 32.5 points for InternVL3 (2B to 8B) and 13 points for Qwen3-VL (4B to 8B). Beyond that the trend reverses. Both dense 32B models answer from the image less often than their 7--8B siblings, by 11.2 points for Qwen3-VL [8.9, 13.4] and 16.2 points for Qwen2.5-VL [13.9, 18.6], and the Qwen3-VL 30B-A3B mixture of experts with about 3B active parameters outperforms the dense 32B by 15.9 points (\cref{tab:pairs}; all $p<10^{-10}$, McNemar).
+
+The 32B models are not less able to use the image. They perceive the fact from the photo alone more often than their smaller siblings (86\% and 82\%), and with the instruction to rely on the image they answer from it on 86\% and 80\% of conflicts; the instruction adds 43 points for Qwen3-VL-32B, the largest gain of all models. What changes with scale is the default arbitration between inputs when no instruction is given. A second change is in detection: false alarms on faithful descriptions rise from the 2--3B to the 7--8B model in every family (from 17\% to 45\% for Qwen3-VL), and within Qwen3-VL false-alarm-corrected detection falls from 59\% at 2B to 44\% at 32B. Larger models are more ready to call a description wrong, and less ready to act on it.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/scaling.pdf}
+\caption{\textbf{Scaling within families.} Left: detection minus false alarms. Middle: answers from the image with the description present. Right: the same with an instruction to rely on the image. Hollow marker: Qwen3-VL-30B-A3B (mixture of experts, about 3B active). Bars: 95\% image-clustered bootstrap intervals.}
+\label{fig:scaling}
+\end{figure*}
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\linewidth}{!}{\input{tables/pairs}}
+\caption{\textbf{Paired size comparisons} on the same 1,800 conflicts: change in answering from the image (points, 95\% interval), discordant pairs (larger only / smaller only), exact McNemar $p$.}
+\label{tab:pairs}
+\end{table}
+
+\subsection{What helps: instructions and turn structure}
+\label{sec:probes}
+
+An explicit instruction to rely on the image (\cref{fig:outcomes}b) raises resolution by 20--43 points for the seven models of 4B and above, but by only 2--7 points for the four models of 2--3B. Writing an error report and then answering (verbalize) also helps, but its controls show why. For nine of eleven models, merely moving the question to a later turn behind a neutral reply (delay) gains more than the report adds on top of the check control: Qwen3-VL-4B goes from 41\% to 70\% with delay, 72\% with the check prompt and 80\% after its own report. The report itself adds $-$5 to $+$15 points beyond the check control (supplement), and for SmolVLM2 and InternVL3-8B nothing. Putting distance between the misleading text and the question appears to matter more than what the model wrote about it. The open-ended form gives lower resolution than multiple choice for every model above 3B (33--41\% vs.\ 41--65\%), so the gap is not an artefact of the option format.
+
+\subsection{Attribution and self-report consistency}
+\label{sec:attribution}
+
+Models are good at pointing at the wrong words: nine of eleven name the edited span in 67--93\% of reports (\cref{tab:main}). They are poor at saying which input is wrong. Only Qwen2.5-VL-3B (67\%) and Qwen3-VL-32B (54\%) usually name the text; the others do so in at most 28\% of reports, and all four fields are right in at most 16\%. More striking, reports often contradict the model's own detection answer. On conflicts it flags in the detection probe, Qwen3-VL-4B writes ``Error: no'' in 99.7\% of its reports, InternVL3-8B in 86\%, Qwen3-VL-2B and Qwen2.5-VL-7B in 71\% and InternVL3-2B in 52\%, while still naming the edited words and the error type in many of them. A model's report of an error is therefore a weak signal of what it has detected. Attribution and resolution are coupled like detection and resolution: ten of eleven models resolve more conflicts when their report names the edited words (by up to 41 points, Qwen2.5-VL-32B).
+
+\subsection{Conflict type and severity}
+\label{sec:severity}
+
+Severity grades behave as intended for attributes: pooled over the eleven models, detection falls by 13.3 points [8.1, 18.2] and resolution by 19.0 points [12.7, 25.4] from \Sone to \Sthree. For relations the drops are 4.5 and 9.6 points. Object conflicts are an exception: detection falls by 5.3 points but resolution does not change ($-$0.8 [$-$6.4, 4.7]), and object conflicts are the hardest type to resolve for the four Qwen3-VL models of 4B and above (supplement, per-cell table). Answer position does not explain the results: models pick the photo's answer less often when it is option A (\eg 32\% vs.\ 45--50\% for Qwen3-VL-32B), but correct answers are spread evenly across A--D.

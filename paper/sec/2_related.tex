@@ -1,0 +1,17 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Hallucination and grounding.}
+Object hallucination was first measured in captioning~\cite{rohrbach2018chair} and later by polling VLMs about object presence~\cite{li2023pope}. HallusionBench~\cite{guan2024hallusionbench} combines visual illusions with language priors, and Tong \etal~\cite{tong2024eyes} show that VLMs fail on image pairs their vision encoders cannot tell apart. These benchmarks ask whether a model's own output is grounded; \name instead gives the model a wrong input and asks whether it notices, resists and explains it.
+
+\paragraph{Foils and compositional descriptions.}
+FOIL~\cite{shekhar2017foil} replaces one word in a COCO caption and asks models to detect and locate it, which is close to our detection and span probes. VALSE~\cite{parcalabescu2022valse}, Winoground~\cite{thrush2022winoground}, ARO~\cite{yuksekgonul2023aro} and SugarCrepe~\cite{hsieh2023sugarcrepe} test whether models prefer a correct caption over a minimally changed one. They score a choice between captions; we additionally ask a question whose answer depends on which input the model trusts, grade each edit by difficulty, and compare the model's report of the error with its own answers.
+
+\paragraph{Text--image conflicts in VLMs.}
+Several recent studies give VLMs text that contradicts the image. Deng \etal~\cite{deng2025words} find that VLMs often follow inconsistent text over visual evidence, which they call blind faith in text. \pending{Related benchmarks verified in the reference search go here, each with one sentence on the difference: e.g. detection only, no severity grading, no attribution, no control for turn structure, no scaling within a family.} \name differs in measuring detection, resolution and attribution on the same single-span edits, with perception controls that separate seeing the fact from trusting it, and with a scaling ladder inside one model family.
+
+\paragraph{Knowledge conflicts in language models.}
+For text-only models, conflicts between the context and the model's parametric knowledge are well studied~\cite{longpre2021entity,xie2024chameleon,xu2024conflicts}. Our setting differs in that both sources are inputs, and the model can check one against the other.
+
+\paragraph{Faithfulness of self-reports.}
+Explanations produced by language models need not reflect what drives their answers~\cite{turpin2023unfaithful,lanham2023faithfulness}, and models tend to agree with what a user asserts~\cite{sharma2024sycophancy}. Our attribution and verbalize probes test this for multimodal conflicts: whether a model's report of the error agrees with its own detection answer, and whether writing the report changes the answer it then gives.

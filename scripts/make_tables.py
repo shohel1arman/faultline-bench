@@ -80,27 +80,25 @@ def write(out, name, lines):
 
 
 def table_dataset(records, out):
+    """Compact enough for one column: severity rule per type and severity, record counts."""
     core = select(records, "core")
     cells = Counter(cell_of(r) for r in core)
     imgs = len({r["image_file"] for r in core})
     rows = [
-        ("Attribute", "attribute", "colour edit far from the true colour; target $\\geq$10\\% of image",
-         "far edit; target 2--10\\%", "near colour"),
-        ("Object", "object", "object from another group; target $\\geq$10\\%",
-         "another group; target 2--10\\%", "object from the same group"),
-        ("Relation", "relation", "spatial gap $\\geq$15\\%, both objects $\\geq$3\\%",
-         "gap 6--15\\%", "gap 2--6\\%"),
+        ("Attribute", "attribute", "far colour, $\\geq$10\\%", "far colour, 2--10\\%", "near colour"),
+        ("Object", "object", "other group, $\\geq$10\\%", "other group, 2--10\\%", "same group"),
+        ("Relation", "relation", "gap $\\geq$15\\%", "gap 6--15\\%", "gap 2--6\\%"),
     ]
-    rag = ">{\\raggedright\\arraybackslash}"   # needs \\usepackage{array}
-    lines = ["\\begin{tabular}{l" + rag + "p{3.4cm}" + rag + "p{2.4cm}" + rag + "p{2.4cm}c}", "\\toprule",
+    lines = ["\\begin{tabular}{lcccc}", "\\toprule",
              "Type & S1 (salient) & S2 (moderate) & S3 (subtle) & Controls \\\\", "\\midrule"]
     for label, t, s1, s2, s3 in rows:
-        lines.append(f"{label} & {s1} ({cells[(t, 'S1')]}) & {s2} ({cells[(t, 'S2')]}) & "
-                     f"{s3} ({cells[(t, 'S3')]}) & {cells[('control', t)]} \\\\")
+        lines.append(f"{label} & {s1} & {s2} & {s3} & -- \\\\")
+        lines.append(f" & {cells[(t, 'S1')]} & {cells[(t, 'S2')]} & {cells[(t, 'S3')]} & {cells[('control', t)]} \\\\")
+    n_conf = sum(v for c, v in cells.items() if c[0] != "control")
+    n_ctrl = sum(v for c, v in cells.items() if c[0] == "control")
     lines += ["\\midrule",
-              f"\\multicolumn{{5}}{{l}}{{Core set: {len(core):,} records ({sum(v for c, v in cells.items() if c[0] != 'control'):,} "
-              f"conflicts, {sum(v for c, v in cells.items() if c[0] == 'control')} controls) on {imgs:,} images; "
-              f"full release: {len(records):,} records.}} \\\\",
+              f"\\multicolumn{{5}}{{l}}{{Core: {len(core):,} records ({n_conf:,} conflicts, {n_ctrl} controls), "
+              f"{imgs:,} images; full release {len(records):,}.}} \\\\",
               "\\bottomrule", "\\end{tabular}"]
     write(out, "dataset", lines)
 

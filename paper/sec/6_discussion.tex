@@ -1,0 +1,15 @@
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\paragraph{What the results mean.}
+Detection, resolution and attribution measure different things, and a strong score on one does not transfer: models that flag nearly every conflict still answer from the text, and models that point at the right words still say the error is in the image or that there is none. For systems that put text next to images, such as retrieval-augmented or captioned inputs, flagging an inconsistency is therefore not evidence that the answer was protected from it. The scaling results add a practical point: the largest models we test were the most responsive to an explicit instruction, so a short instruction to rely on the image recovers much of the gap, whereas the default behaviour cannot be assumed to improve with size.
+
+\paragraph{Limitations.}
+Our models are open and range from 2B to 32B; we could not evaluate closed models or open models above 32B, and the non-monotonic trend at 32B rests on two families. Descriptions are template sentences, which keeps every edit to a single span but is simpler than natural captions. Relations are 2D image-plane relations. Labels come from scene graphs, which contain errors; the human check estimates their rate \pending{(valid rate)}, and every record shown in our figures is one that all eleven models perceive correctly from the photo alone. Prompts are fixed and in English, and we test one wording per probe; results may change with other wordings. Report parsing is heuristic; all rules, and the four added after inspecting outputs, are in the supplement, and at most 8.1\% of reports are unparsed.
+
+\paragraph{Data and annotators.}
+\name uses Visual Genome photos and GQA scene graphs (CC~BY~4.0); we collect no new images and release annotations under the same license. Photos include people, who are never used as edit targets or answers. The two annotators \pending{were volunteers / were paid; gave informed consent; no personal information was collected; ethics review status}.
+
+\section{Conclusion}
+\label{sec:conclusion}
+\name measures, on the same controlled conflicts, whether a VLM notices that an image and its description disagree, answers from the right input, and says what is wrong. Across eleven open models the three abilities come apart: noticing rarely means acting, self-reports often contradict detection, and larger models follow the image when asked but not by default. We hope the benchmark and its control probes make these failures easy to track as models change.
