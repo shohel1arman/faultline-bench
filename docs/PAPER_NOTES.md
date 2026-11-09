@@ -188,6 +188,11 @@ Readings for the paper:
 - Steerability (with "rely on the image" minus without): +1.8 (SmolVLM2) to +43.2
   (Qwen3-VL-32B).
 
+- Answer position: the image answer sits at A/B/C/D in 473/451/440/436 conflicts and
+  the text answer in 420/454/444/482, so positions are balanced. Models pick the image
+  answer less often when it is option A (Qwen3-VL-32B 32% at A vs 45-50% at B-D), a
+  position bias that averages out over the balanced positions; mention in a footnote.
+
 ### Paper assets (regenerate with the commands below)
 
 ```
@@ -332,3 +337,20 @@ From the outline, to verify: Deng et al. CVPR 2025, CLASH, MC2, Nguyen et al. 20
   (`docs/ANNOTATION.md`); about 3 to 4 hours per annotator. Gives human accuracy per
   cell, the estimated valid rate, agreement (kappa) and the severity correlation.
 - OpenReview profiles for all authors before the Nov 10 registration.
+
+## CVPR 2027 requirements checklist (author guidelines, read 2026-11-10)
+
+- 8 pages including figures and tables; references and the LLM Usage Statement extra.
+  Official kit: github.com/cvpr-org/author-kit (2027 version).
+- LLM Usage Statement (mandatory, anonymous, after the main text, before references):
+  LLM assistance was used for code, analysis scripts and drafting; authors checked all
+  content and citations.
+- No links that identify authors: no GitHub link; "code and data will be released";
+  the anonymous zip (`scripts/make_release.py`) can go in the supplement.
+- Human annotators: state who they were, that they gave informed consent, that no
+  personal data was collected, and the ethics review position (ask the institution).
+- Data ethics: Visual Genome / GQA images (CC BY 4.0) include people; no new images;
+  people are never edited or used as targets.
+- Contemporaneous work (public on or after 2026-09-15) must be cited and discussed.
+- Author list fixed after Nov 10; profiles with conflicts and the data-use and AI
+  consent complete by Nov 10; reciprocal reviewer eligibility per author.
