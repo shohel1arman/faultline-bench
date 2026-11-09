@@ -48,3 +48,5 @@ data/preview.html
 # the sample list and the exported answers are tracked
 annotation/*.html
 annotation/site/
+# per-record outcomes are large and rebuilt by scripts/analyze.py
+results/*/outcomes.jsonl

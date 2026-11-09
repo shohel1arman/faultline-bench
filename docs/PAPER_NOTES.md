@@ -2,7 +2,7 @@
 
 Working notes for writing the CVPR 2027 paper: what was built, why, what has been found,
 and what still needs checking. Numbers are copied from `scripts/analyze.py` output; rerun
-it before quoting anything in the paper. Last updated 2026-11-02.
+it before quoting anything in the paper. Last updated 2026-11-09.
 
 ## One-line thesis
 
@@ -100,23 +100,25 @@ Readings: detection falls with severity for attribute and object, which supports
 severity design; relations are hard to perceive at all (near the 25% guessing rate at
 S3), so relation results must be read through the perceived-only metric.
 
-### Spark bfloat16, all 2,001 records, ten models (2026-11-06)
+### Final: Spark bfloat16, all 2,001 records, eleven models (2026-11-09)
 
-1,800 conflicts and 201 controls per model. Qwen2.5-VL-32B still running. Includes the
-fourth parser fix (copied option lists are no answer). 95% image-clustered bootstrap.
+1,800 conflicts and 201 controls per model; all runs complete, 0 errors. Tables and
+figures: `results/spark/` and `results/figures/` (`scripts/analyze.py`,
+`scripts/make_figures.py`). 95% image-clustered bootstrap.
 
-| Model | Perceive | Flags | False flags | Det. adj. | From image | From image if perceived | Focus | Delay | Check | Verbalize |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Qwen3-VL-2B | 78.1 | 76.3 | 16.9 | 59.4 | 39.4 | 47.4 | 45.5 | 27.9 | 26.3 | 37.1 |
-| Qwen3-VL-4B | 83.3 | 94.8 | 37.3 | 57.5 | 41.3 | 47.0 | 76.0 | 69.8 | 71.9 | 80.0 |
-| Qwen3-VL-8B | 82.4 | 96.3 | 44.8 | 51.6 | 54.3 | 62.0 | 84.2 | 69.3 | 78.4 | 82.8 |
-| Qwen3-VL-30B-A3B | 82.2 | 95.2 | 39.8 | 55.4 | 59.0 | 66.5 | 79.4 | 63.0 | 64.3 | 78.8 |
-| Qwen3-VL-32B | 85.7 | 97.7 | 53.7 | 43.9 | 43.1 | 48.2 | 86.3 | 64.3 | 79.2 | 85.9 |
-| InternVL3-2B | 73.6 | 72.0 | 19.9 | 52.1 | 16.9 | 22.7 | 22.4 | 30.9 | 39.8 | 52.9 |
-| InternVL3-8B | 82.3 | 93.9 | 35.8 | 58.1 | 49.4 | 55.6 | 72.9 | 74.3 | 75.5 | 75.2 |
-| Qwen2.5-VL-3B | 76.8 | 94.6 | 47.3 | 47.3 | 18.9 | 24.4 | 26.0 | 24.8 | 20.3 | 23.4 |
-| Qwen2.5-VL-7B | 79.5 | 98.2 | 67.2 | 31.1 | 65.0 | 73.4 | 84.8 | 71.1 | 75.2 | 80.6 |
-| SmolVLM2-2.2B | 68.6 | 84.4 | 62.2 | 22.3 | 7.8 | 11.4 | 9.6 | 13.7 | 18.1 | 13.3 |
+| Model | Perceive | Flags | False flags | Det. adj. | From image | If perceived | Open | Focus | Delay | Check | Verbalize |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Qwen3-VL-2B | 78.1 | 76.3 | 16.9 | 59.4 | 39.4 | 47.4 | 34.2 | 45.5 | 27.9 | 26.3 | 37.1 |
+| Qwen3-VL-4B | 83.3 | 94.8 | 37.3 | 57.5 | 41.3 | 47.0 | 38.0 | 76.0 | 69.8 | 71.9 | 80.0 |
+| Qwen3-VL-8B | 82.4 | 96.3 | 44.8 | 51.6 | 54.3 | 62.0 | 38.8 | 84.2 | 69.3 | 78.4 | 82.8 |
+| Qwen3-VL-30B-A3B | 82.2 | 95.2 | 39.8 | 55.4 | 59.0 | 66.5 | 35.1 | 79.4 | 63.0 | 64.3 | 78.8 |
+| Qwen3-VL-32B | 85.7 | 97.7 | 53.7 | 43.9 | 43.1 | 48.2 | 40.7 | 86.3 | 64.3 | 79.2 | 85.9 |
+| Qwen2.5-VL-3B | 76.8 | 94.6 | 47.3 | 47.3 | 18.9 | 24.4 | 19.6 | 26.0 | 24.8 | 20.3 | 23.4 |
+| Qwen2.5-VL-7B | 79.5 | 98.2 | 67.2 | 31.1 | 65.0 | 73.4 | 39.2 | 84.8 | 71.1 | 75.2 | 80.6 |
+| Qwen2.5-VL-32B | 82.4 | 93.8 | 43.3 | 50.5 | 48.8 | 56.2 | 35.4 | 80.3 | 70.6 | 77.4 | 82.0 |
+| InternVL3-2B | 73.6 | 72.0 | 19.9 | 52.1 | 16.9 | 22.7 | 11.9 | 22.4 | 30.9 | 39.8 | 52.9 |
+| InternVL3-8B | 82.3 | 93.9 | 35.8 | 58.1 | 49.4 | 55.6 | 33.0 | 72.9 | 74.3 | 75.5 | 75.2 |
+| SmolVLM2-2.2B | 68.6 | 84.4 | 62.2 | 22.3 | 7.8 | 11.4 | 10.7 | 9.6 | 13.7 | 18.1 | 13.3 |
 
 | Model | Structure | Check | Report | Words located | Type | Wrong input | Severity | All four | Coupling D | Controls |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -125,46 +127,48 @@ fourth parser fix (copied option lists are no answer). 95% image-clustered boots
 | Qwen3-VL-8B | +15.0 | +9.1 | +4.4 | 87.9 | 77.5 | 28.2 | 31.9 | 9.3 | +46.9 | 97.5 |
 | Qwen3-VL-30B-A3B | +4.0 | +1.3 | +14.5 | 77.6 | 71.8 | 3.4 | 30.1 | 1.4 | +53.4 | 98.5 |
 | Qwen3-VL-32B | +21.2 | +14.9 | +6.7 | 93.3 | 78.9 | 54.2 | 33.3 | 16.4 | +39.3 | 98.0 |
-| InternVL3-2B | +14.0 | +8.9 | +13.1 | 70.8 | 39.9 | 0.0 | 20.7 | 0.0 | +14.4 | 100.0 |
-| InternVL3-8B | +24.8 | +1.2 | -0.3 | 11.8 | 10.1 | 3.8 | 26.2 | 1.3 | +41.9 | 99.0 |
 | Qwen2.5-VL-3B | +5.9 | -4.6 | +3.2 | 85.9 | 53.6 | 67.0 | 30.2 | 10.6 | +20.0 | 100.0 |
 | Qwen2.5-VL-7B | +6.1 | +4.1 | +5.4 | 81.5 | 67.7 | 21.1 | 28.4 | 5.7 | +56.6 | 97.0 |
+| Qwen2.5-VL-32B | +21.8 | +6.8 | +4.6 | 82.7 | 75.6 | 10.1 | 32.9 | 2.6 | +44.5 | 99.0 |
+| InternVL3-2B | +14.0 | +8.9 | +13.1 | 70.8 | 39.9 | 0.0 | 20.7 | 0.0 | +14.4 | 100.0 |
+| InternVL3-8B | +24.8 | +1.2 | -0.3 | 11.8 | 10.1 | 3.8 | 26.2 | 1.3 | +41.9 | 99.0 |
 | SmolVLM2-2.2B | +5.8 | +4.4 | -4.7 | 66.9 | 0.2 | 0.0 | 1.1 | 0.0 | +5.9 | 100.0 |
 
-- Qwen3-VL-2B: adjusted detection 59.4 [53.6, 64.5]; from image 39.4 [37.2, 41.8]
-- Qwen3-VL-4B: adjusted detection 57.5 [50.7, 64.4]; from image 41.3 [38.9, 43.7]
-- Qwen3-VL-8B: adjusted detection 51.6 [44.5, 58.4]; from image 54.3 [52.0, 56.8]
-- Qwen3-VL-30B-A3B: adjusted detection 55.4 [48.2, 62.2]; from image 59.0 [56.6, 61.3]
-- Qwen3-VL-32B: adjusted detection 43.9 [36.1, 51.1]; from image 43.1 [40.8, 45.5]
-- InternVL3-2B: adjusted detection 52.1 [46.3, 57.8]; from image 16.9 [15.2, 18.8]
-- InternVL3-8B: adjusted detection 58.1 [51.1, 65.0]; from image 49.4 [47.0, 51.8]
-- Qwen2.5-VL-3B: adjusted detection 47.3 [40.1, 54.2]; from image 18.9 [17.1, 20.9]
-- Qwen2.5-VL-7B: adjusted detection 31.1 [24.2, 37.8]; from image 65.0 [62.8, 67.3]
-- SmolVLM2-2.2B: adjusted detection 22.3 [15.1, 29.0]; from image 7.8 [6.6, 9.2]
+- Qwen3-VL-2B: adjusted detection 59.4 [53.6, 64.5]; from image 39.4 [37.2, 41.8]; told to rely on image 45.5 [43.3, 47.9]
+- Qwen3-VL-4B: adjusted detection 57.5 [50.7, 64.4]; from image 41.3 [38.9, 43.7]; told to rely on image 76.0 [73.9, 78.0]
+- Qwen3-VL-8B: adjusted detection 51.6 [44.5, 58.4]; from image 54.3 [52.0, 56.8]; told to rely on image 84.2 [82.4, 85.9]
+- Qwen3-VL-30B-A3B: adjusted detection 55.4 [48.2, 62.2]; from image 59.0 [56.6, 61.3]; told to rely on image 79.4 [77.4, 81.3]
+- Qwen3-VL-32B: adjusted detection 43.9 [36.1, 51.1]; from image 43.1 [40.8, 45.5]; told to rely on image 86.3 [84.7, 88.0]
+- Qwen2.5-VL-3B: adjusted detection 47.3 [40.1, 54.2]; from image 18.9 [17.1, 20.9]; told to rely on image 26.0 [24.0, 28.2]
+- Qwen2.5-VL-7B: adjusted detection 31.1 [24.2, 37.8]; from image 65.0 [62.8, 67.3]; told to rely on image 84.8 [83.1, 86.6]
+- Qwen2.5-VL-32B: adjusted detection 50.5 [43.5, 57.3]; from image 48.8 [46.4, 51.2]; told to rely on image 80.3 [78.4, 82.2]
+- InternVL3-2B: adjusted detection 52.1 [46.3, 57.8]; from image 16.9 [15.2, 18.8]; told to rely on image 22.4 [20.6, 24.4]
+- InternVL3-8B: adjusted detection 58.1 [51.1, 65.0]; from image 49.4 [47.0, 51.8]; told to rely on image 72.9 [70.8, 75.0]
+- SmolVLM2-2.2B: adjusted detection 22.3 [15.1, 29.0]; from image 7.8 [6.6, 9.2]; told to rely on image 9.6 [8.3, 11.1]
 
-Readings:
+Readings for the paper:
 
-- The gap holds for all ten: every model flags most conflicts (72-98%) and still answers
-  from the text on many of them; flags minus answers-from-image is 33 to 77 points.
-- Scale does not clean it up. Answering from the image rises from 2B to 8B in every family
-  (Qwen3-VL 39 -> 41 -> 54; InternVL3 17 -> 49; Qwen2.5-VL 19 -> 65) and to 59 for the
-  30B-A3B, but the dense Qwen3-VL-32B falls back to 43. It is not unable: told to rely on
-  the image it reaches 86, the highest of all. Larger models follow the image when asked
-  more than they choose it by default. Wait for Qwen2.5-VL-32B before writing the claim.
-- Larger models flag more faithful descriptions as wrong (Qwen3-VL false flags 17 -> 37 ->
-  45 -> 40 -> 54; Qwen2.5-VL 47 -> 67), so adjusted detection does not improve with scale
-  and is lowest for the largest Qwen3-VL (44).
-- Turn structure explains most of the verbalize gain for most models; the model's own
-  report adds -5 to +15 points. Qwen3-VL-2B is the exception: the delay control lowers
-  its image answers (-11.6).
-- Self-reports contradict detection answers in three models: InternVL3-8B writes "Error:
-  no" in 86% of reports (flags 94% in the detection probe), Qwen3-VL-4B in nearly all,
-  Qwen3-VL-2B mostly. Their "words located" and type scores are low for that reason.
-  Only Qwen3-VL-32B (54%) and Qwen2.5-VL-3B (67%) usually name the text as the wrong input.
-- Cross-platform check (`results/platform_agreement.csv`): the four small models on the
-  Mac (float16) and the Spark (bfloat16) give the same multiple-choice letter on 98.6 to
-  99.5% of records and the same detection decision on 98.6 to 99.8%; headline metrics
-  differ by at most 1.5 points.
+- The gap holds for all eleven: every model flags 72-98% of conflicts and still answers
+  from the text on many; "noticed but answered from the text" is the largest outcome for
+  6 of 11 models (figure `outcomes`).
+- Scale helps up to 7-8B in every family (Qwen3-VL 39 -> 41 -> 54; Qwen2.5-VL 19 -> 65;
+  InternVL3 17 -> 49) and the 30B-A3B mixture of experts reaches 59, but both dense 32B
+  models fall back (Qwen3-VL 54 -> 43, Qwen2.5-VL 65 -> 49). Told to rely on the image,
+  the same 32B models reach 86 and 80. Larger models are able to use the image and do so
+  when asked, but do not choose it by default (figure `scaling`).
+- False flags on faithful descriptions grow with scale in Qwen3-VL (17 -> 54), so
+  false-alarm-corrected detection does not improve with scale (Qwen3-VL 59 -> 44).
+- Turn structure explains most of the verbalize gain; the model's own error report adds
+  -5 to +15 points (Qwen3-VL-2B is the exception: the delay lowers its image answers).
+- Attribution parts come apart: models locate the wrong words (67-93% for most) but
+  rarely say which input is wrong (best: Qwen2.5-VL-3B 67, Qwen3-VL-32B 54); InternVL3-8B,
+  Qwen3-VL-4B and Qwen3-VL-2B write "Error: no" in most reports despite flagging most
+  conflicts in the detection probe.
+- Per cell (figure `cells`): image answers fall from S1 to S3 for attributes in every
+  model; object conflicts are the hardest to resolve for the Qwen3-VL models; relations
+  are near zero for SmolVLM2 and InternVL3-2B.
+- Cross-platform check: see `results/platform_agreement.csv` (98.6-99.5% identical
+  multiple-choice answers between the Mac float16 and Spark bfloat16 runs).
 
 ### Four small models, full core set, Mac float16 run (cross-platform check)
 

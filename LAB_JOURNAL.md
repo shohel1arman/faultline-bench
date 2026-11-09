@@ -359,3 +359,15 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   first word (Qwen3-VL-2B "Wrong input" accuracy was 61% for this reason; now 0%).
 - Cross-platform check on the four small models: 98.6-99.5% identical multiple-choice
   answers, headline metrics within 1.5 points (`scripts/compare_platforms.py`).
+
+## 2026-11-09
+
+**All Spark runs complete; final analysis and figures**
+- Qwen2.5-VL-32B finished on Nov 6 at 21:14; the Spark was later switched off, and the
+  auto-resume found nothing left to do. Eleven models x 2,001 records, 0 errors, 0 bad
+  lines. Auto-resume removed from the crontab.
+- Final tables in results/spark/, figures in results/figures/ (scaling, outcomes, cells;
+  palette validated for colour-vision deficiency, lines direct-labelled by marker shape).
+- Qwen2.5-VL-32B confirms the Qwen3-VL pattern: both dense 32B models answer from the
+  image less often than their 7-8B siblings (65 -> 49 and 54 -> 43) while following the
+  "rely on the image" instruction at 80-86%.
