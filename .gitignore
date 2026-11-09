@@ -52,3 +52,6 @@ annotation/site/
 results/*/outcomes.jsonl
 results/figures/candidates/
 dist/
+
+# paper LaTeX is kept outside version control
+paper/

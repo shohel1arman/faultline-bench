@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copy the generated figures and tables into paper/, so the paper folder is self-contained
-# (upload paper/ to Overleaf as it is). Rerun after any change to the results.
+# (upload paper/ to Overleaf as it is). paper/ is not tracked in git. Rerun after any change to the results.
 set -e
 cd "$(dirname "$0")/.."
 mkdir -p paper/figures paper/tables
