@@ -203,8 +203,15 @@ python scripts/make_figures.py
   `cells` (perceive/detect/resolve per cell), `platform`.
 - Figures (`results/figures/`, PDF and PNG): `scaling` (three panels vs size),
   `outcomes` (joint outcome shares), `probes` (image answers under each probe),
-  `cells` (heatmap per cell). Still to make: a teaser with one real example (needs the
-  photos from the Spark or the annotation page).
+  `cells` (heatmap per cell); with photos, made on the Mac or the Spark by
+  `scripts/make_examples.py`: `teaser` (one conflict, four models, each probe) and
+  `examples` (one per type at S1 and S3). Choose records from the contact sheets
+  (`make_examples.py candidates`).
+- Appendix: `results/tables/prompts.tex` (every probe's exact wording, from
+  `scripts/make_prompt_appendix.py`).
+- Anonymous package for review: `python scripts/make_release.py` builds
+  `dist/faultline_anonymous.zip` (code, data, outputs, results; no history, journal or
+  notes; author lines rewritten; refuses to build if an identifying string remains).
 
 ### Four small models, full core set, Mac float16 run (cross-platform check)
 

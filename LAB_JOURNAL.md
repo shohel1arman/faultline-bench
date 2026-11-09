@@ -378,3 +378,13 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   drops are significant (p < 1e-10, CIs exclude zero).
 - `scripts/make_tables.py`: seven booktabs tables, all compiled in a test document
   without errors. `scripts/make_figures.py`: added the probe figure.
+
+**Paper assets, part 2**
+- Prompt appendix generated from the prompt code (compiles cleanly).
+- `scripts/make_examples.py`: teaser and per-type example figures with real photos,
+  plus contact sheets for choosing records; tested with placeholder photos here, to be
+  run on the Mac where the photos are. 73 teaser candidates meet the rule (all four shown
+  models see the fact alone; both 32B models flag the conflict, answer from the text,
+  and follow the image when told).
+- `scripts/make_release.py`: anonymous zip (121 files, 16.6 MB), checked for names,
+  emails, machine names and home paths.
