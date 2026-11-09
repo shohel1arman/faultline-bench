@@ -170,6 +170,42 @@ Readings for the paper:
 - Cross-platform check: see `results/platform_agreement.csv` (98.6-99.5% identical
   multiple-choice answers between the Mac float16 and Spark bfloat16 runs).
 
+### Further analyses (2026-11-09, `scripts/extra_analysis.py`)
+
+- Arbitration failure: among conflicts where the model perceives the fact from the image
+  alone and flags the conflict, the share it still answers from the text: 26.1
+  (Qwen2.5-VL-7B) to 87.9 (SmolVLM2); Qwen3-VL-32B 51.2, Qwen2.5-VL-32B 41.6.
+- Report contradicts detection (attribution says "Error: no" on a flagged conflict):
+  Qwen3-VL-4B 99.7, InternVL3-8B 85.5, Qwen3-VL-2B 71.7, Qwen2.5-VL-7B 71.0,
+  InternVL3-2B 51.9; below 15 for the rest (Qwen3-VL-32B 0.3).
+- Paired size comparisons on the same records (image-clustered CI, exact McNemar):
+  Qwen3-VL-8B -> 32B -11.2 [-13.4, -8.9]; Qwen2.5-VL-7B -> 32B -16.2 [-18.6, -13.9];
+  Qwen3-VL-30B-A3B -> 32B -15.9; all p < 1e-10. The 32B drop is not noise.
+- Severity, pooled over the eleven models, S1 minus S3: detection +7.7 [+5.6, +9.8],
+  resolution +9.3 [+5.7, +12.7]; attributes strongest (+13.3 / +19.0); object
+  resolution shows no severity effect (-0.8 [-6.4, +4.7]). Report as support for the
+  grading with the object exception.
+- Steerability (with "rely on the image" minus without): +1.8 (SmolVLM2) to +43.2
+  (Qwen3-VL-32B).
+
+### Paper assets (regenerate with the commands below)
+
+```
+python scripts/analyze.py outputs/spark/*/core.jsonl --out results/spark
+python scripts/extra_analysis.py
+python scripts/compare_platforms.py
+python scripts/make_tables.py
+python scripts/make_figures.py
+```
+
+- Tables (`results/tables/`, booktabs; dataset needs `\usepackage{array}`): `dataset`,
+  `main`, `probes` (asterisk = McNemar p < 0.001), `pairs`, `severity`; supplement:
+  `cells` (perceive/detect/resolve per cell), `platform`.
+- Figures (`results/figures/`, PDF and PNG): `scaling` (three panels vs size),
+  `outcomes` (joint outcome shares), `probes` (image answers under each probe),
+  `cells` (heatmap per cell). Still to make: a teaser with one real example (needs the
+  photos from the Spark or the annotation page).
+
 ### Four small models, full core set, Mac float16 run (cross-platform check)
 
 `scripts/analyze.py` on all 2,001 records of each model (1,800 conflicts, 201 controls).

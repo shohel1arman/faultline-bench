@@ -371,3 +371,10 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
 - Qwen2.5-VL-32B confirms the Qwen3-VL pattern: both dense 32B models answer from the
   image less often than their 7-8B siblings (65 -> 49 and 54 -> 43) while following the
   "rely on the image" instruction at 80-86%.
+
+**Further analyses, tables and figures**
+- `scripts/extra_analysis.py`: arbitration failure, report-detection contradiction,
+  steerability, severity effects pooled over models, paired size comparisons. Both 32B
+  drops are significant (p < 1e-10, CIs exclude zero).
+- `scripts/make_tables.py`: seven booktabs tables, all compiled in a test document
+  without errors. `scripts/make_figures.py`: added the probe figure.

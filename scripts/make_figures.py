@@ -7,6 +7,8 @@ Writes PDF (for LaTeX) and PNG (for checking) to results/figures/:
                answers from the image by default, and when told to rely on the image
   outcomes     share of conflicts by joint outcome (noticed or not x image or text answer)
   cells        answers from the image per cell (type x severity) for every model
+  probes       answers from the image under each probe: direct question, delayed question,
+               after the check prompt, after the model's own error report, with "rely on the image"
 """
 
 import argparse
@@ -66,7 +68,7 @@ def load_metrics(path):
 
 def save(fig, out, name):
     out.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out / f"{name}.pdf", bbox_inches="tight")
+    fig.savefig(out / f"{name}.pdf", bbox_inches="tight", metadata={"CreationDate": None})  # reproducible files
     fig.savefig(out / f"{name}.png", bbox_inches="tight")
     plt.close(fig)
 
@@ -178,6 +180,40 @@ def fig_cells(cells_path, m, out):
     save(fig, out, "cells")
 
 
+def fig_probes(m, out):
+    order = ["qwen3vl-2b", "qwen3vl-4b", "qwen3vl-8b", "qwen3vl-30b-a3b", "qwen3vl-32b",
+             "qwen25vl-3b", "qwen25vl-7b", "qwen25vl-32b", "internvl3-2b", "internvl3-8b", "smolvlm2-2b"]
+    order = [k for k in order if k in m][::-1]
+    probes = [("ResA_mcq", "Direct question", "#2a78d6", "o"),
+              ("ResA_delay", "Question in a later turn", "#eb6834", "s"),
+              ("ResA_check", "After the check prompt", "#1baf7a", "^"),
+              ("ResA_verbalize", "After its own error report", "#eda100", "D"),
+              ("ResA_focus", "Told to rely on the image", "#e87ba4", "P")]
+    fig, ax = plt.subplots(figsize=(3.4, 3.4))
+    for i, k in enumerate(order):
+        vals = [m[k][p][0] for p, *_ in probes if m[k].get(p, (None,))[0] is not None]
+        ax.plot([min(vals), max(vals)], [i, i], color=GRID, lw=2.2, zorder=1, solid_capstyle="round")
+        for p, label, color, marker in probes:
+            v = m[k].get(p, (None,))[0]
+            if v is not None:
+                ax.scatter([v], [i], color=color, marker=marker, s=26, zorder=3, edgecolors="white",
+                           linewidths=0.6, label=label if i == 0 else None)
+    for i in range(1, len(order)):
+        fam_prev, fam = MODELS[order[i - 1]][0], MODELS[order[i]][0]
+        if fam != fam_prev:
+            ax.axhline(i - 0.5, color=GRID, lw=0.6)
+    ax.set_yticks(range(len(order)))
+    ax.set_yticklabels([MODELS[k][1] for k in order])
+    ax.set_xlim(0, 100)
+    ax.set_xlabel("Answers from the image (% of conflicts)")
+    ax.tick_params(axis="y", length=0)
+    ax.spines["left"].set_visible(False)
+    ax.grid(axis="x", color=GRID, lw=0.5, zorder=0)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.35, -0.13), ncol=2, fontsize=6.5, handletextpad=0.2,
+              columnspacing=0.8, scatterpoints=1)
+    save(fig, out, "probes")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="results/spark")
@@ -189,7 +225,8 @@ def main():
     fig_scaling(m, out)
     fig_outcomes(res / "joint.csv", out)
     fig_cells(res / "cells.csv", m, out)
-    print(f"wrote scaling, outcomes and cells to {out}/ (pdf and png)")
+    fig_probes(m, out)
+    print(f"wrote scaling, outcomes, cells and probes to {out}/ (pdf and png)")
 
 
 if __name__ == "__main__":
