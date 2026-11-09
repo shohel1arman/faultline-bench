@@ -136,10 +136,13 @@ def all_perceive(r, outs):
 def teaser_candidates(recs, outs):
     """Conflicts that show the pattern clearly: every model sees the fact alone, the 32B
     models flag the conflict yet answer from the text and follow the image when told, and
-    the target is a distinct object (2-50% of the photo), not the whole scene."""
+    the target is a distinct object (2-50% of the photo), not the whole scene. Attribute
+    conflicts only: object conflicts are asked through a spatial relation ("What is below
+    the chair?"), which reads oddly in a first figure."""
     cands = []
     for r in recs:
-        if not r["is_conflict"] or r["severity"] != "S1" or r["conflict_type"] == "relation":
+        # attribute conflicts: a colour question reads without spatial conventions
+        if not r["is_conflict"] or r["severity"] != "S1" or r["conflict_type"] != "attribute":
             continue
         if not 0.02 <= r["target"]["rel_area"] <= 0.5 or not all_perceive(r, outs):
             continue
