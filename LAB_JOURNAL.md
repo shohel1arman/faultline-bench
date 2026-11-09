@@ -388,3 +388,10 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   and follow the image when told).
 - `scripts/make_release.py`: anonymous zip (121 files, 16.6 MB), checked for names,
   emails, machine names and home paths.
+
+**Figure examples chosen by rule**
+- The first teaser (a paella pan labelled "bowl", filling the photo) and the relation S1
+  example (a "building" box over a person) were poor: scene-graph label problems.
+  Figure records are now chosen only among records every one of the eleven models
+  answers correctly from the image alone, and teaser targets must cover 2-50% of the
+  photo. Rule-based choice also avoids hand-picking examples that flatter the claim.

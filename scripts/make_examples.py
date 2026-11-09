@@ -119,12 +119,29 @@ def text_block(lines, size):
     return VPacker(children=rows, align="left", pad=0, sep=2)
 
 
+ALL_MODELS = ["internvl3-2b", "internvl3-8b", "qwen25vl-3b", "qwen25vl-7b", "qwen25vl-32b", "qwen3vl-2b",
+              "qwen3vl-4b", "qwen3vl-8b", "qwen3vl-30b-a3b", "qwen3vl-32b", "smolvlm2-2b"]
+
+
+def all_perceive(r, outs):
+    """Every model answers the image-only question as labelled: a guard against
+    scene-graph label errors in the records shown in figures."""
+    for m, rows in outs.items():
+        row = rows.get(r["id"])
+        if row is None or not outcome(r, row["probes"])["perceives"]:
+            return False
+    return True
+
+
 def teaser_candidates(recs, outs):
-    """Conflicts that show the pattern clearly: every shown model sees the fact alone, the
-    32B models flag the conflict yet answer from the text, and follow the image when told."""
+    """Conflicts that show the pattern clearly: every model sees the fact alone, the 32B
+    models flag the conflict yet answer from the text and follow the image when told, and
+    the target is a distinct object (2-50% of the photo), not the whole scene."""
     cands = []
     for r in recs:
         if not r["is_conflict"] or r["severity"] != "S1" or r["conflict_type"] == "relation":
+            continue
+        if not 0.02 <= r["target"]["rel_area"] <= 0.5 or not all_perceive(r, outs):
             continue
         if any(r["id"] not in outs[m] for m, _ in TEASER_MODELS):
             continue
@@ -178,11 +195,12 @@ def fig_teaser(rec, outs, images, out):
     save(fig, out, "teaser")
 
 
-def examples_default(recs):
+def examples_default(recs, outs):
+    """First record per cell (stratified order) that every model perceives correctly."""
     pick = {}
     for r in recs:
         c = cell_of(r)
-        if c[0] != "control" and c[1] in ("S1", "S3") and c not in pick:
+        if c[0] != "control" and c[1] in ("S1", "S3") and c not in pick and all_perceive(r, outs):
             pick[c] = r
     return pick
 
@@ -248,8 +266,8 @@ def main():
     recs = select(read_jsonl(args.dataset), "core")
     by_id = {r["id"]: r for r in recs}
     out = Path(args.out)
+    outs = load_outputs(args.outputs, ALL_MODELS)
     if args.what in ("candidates", "teaser"):
-        outs = load_outputs(args.outputs, [m for m, _ in TEASER_MODELS])
         cands = teaser_candidates(recs, outs)
         print(f"{len(cands)} teaser candidates")
     if args.what == "candidates":
@@ -257,7 +275,7 @@ def main():
                       "Teaser candidates (largest target first): pick one with --id")
         for t in ("attribute", "object", "relation"):
             for s in ("S1", "S3"):
-                cell = [r for r in recs if cell_of(r) == (t, s)][:12]
+                cell = [r for r in recs if cell_of(r) == (t, s) and all_perceive(r, outs)][:12]
                 contact_sheet(cell, args.images, out / "candidates" / f"{t}_{s}.png",
                               f"{t} {s}: pick one with --ids {t}/{s}=<id>")
     elif args.what == "teaser":
@@ -267,7 +285,7 @@ def main():
         print(f"teaser record {rec['id']}")
         fig_teaser(rec, outs, args.images, out)
     else:
-        chosen = examples_default(recs)
+        chosen = examples_default(recs, outs)
         for item in (args.ids or "").split(","):
             if item.strip():
                 cell, rid = item.split("=")
