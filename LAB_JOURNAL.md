@@ -395,3 +395,8 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
   Figure records are now chosen only among records every one of the eleven models
   answers correctly from the image alone, and teaser targets must cover 2-50% of the
   photo. Rule-based choice also avoids hand-picking examples that flatter the claim.
+- Teaser restricted to attribute conflicts (object conflicts are asked through a spatial
+  relation, e.g. "What is below the chair?", which is true only in the image plane).
+  Rule-chosen record fl_01827, "The airplane is green" on a white airplane: all four
+  shown models flag it; the 7-8B models answer white, both 32B models answer green, and
+  all answer white when told to rely on the image or after their own report.
