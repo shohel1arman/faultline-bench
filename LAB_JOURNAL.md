@@ -404,3 +404,15 @@ Deadlines (AoE): registration Nov 10, paper Nov 16, supplementary Nov 23, 2026.
 **Method figure**
 - `scripts/make_method_figure.py`: (a) how a pair is built, with the teaser record as the
   running example; (b) the six probe groups and what each measures.
+
+## 2026-11-10: human check round 1
+
+- Both exports received (A1 500, A2 498). Scored: agreement 57.4%, kappa 0.55 (answer),
+  0.41 (description), 0.23 (obviousness); severity vs obviousness Spearman 0.10.
+- Relation cells: annotators pick the label on 24-33% only, and on relation conflicts A1
+  picks the description's wrong relation on 78.6%. Checked two photos myself (fl_00927,
+  fl_00508): the labels are right and all eleven models agree with them from the photo
+  alone. The page let step 1 be changed after the description appeared. Round 1 is
+  therefore not used; details and the fix in docs/ANNOTATION.md.
+- Page fixed (step 1 locked once answered, choice time logged; checked in a browser).
+  Round 2 sample: 500 new core records (seed 2, version 5b3c60a871), disjoint from round 1.

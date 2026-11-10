@@ -66,3 +66,10 @@ def test_summarize_flags_agreed_label_problems():
     assert res["valid_rate"] == pytest.approx(0.8)
     assert res["per_annotator"]["A2"]["cant_tell_question"] == pytest.approx(0.1)
     assert res["agree_choice"] == pytest.approx(0.9)
+
+
+def test_sample_exclude_gives_disjoint_round(records):
+    first = sample(records)
+    second = sample(records, seed=2, first=None, exclude={r["id"] for r in first})
+    assert not {r["id"] for r in first} & {r["id"] for r in second}
+    assert len(second) == len(first)

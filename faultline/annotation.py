@@ -15,21 +15,27 @@ the image and, if not, how obvious the mismatch is. This measures:
 import random
 from collections import Counter
 
-from .runner import cell_of, select
+from .runner import cell_of, select, stratified_order
 
 CANT_TELL = "cant_tell"
 OBVIOUS_SCORE = {"obvious": 3, "moderate": 2, "subtle": 1}
 SEVERITY_SCORE = {"S1": 3, "S2": 2, "S3": 1}
 
 
-def sample(records, n_per_cell=50, n_controls=50, seed=0, first=1000):
+def sample(records, n_per_cell=50, n_controls=50, seed=0, first=1000, exclude=()):
     """The annotation sample, taken from the first `first` core records (every model has them).
 
     Within each cell the records keep their stratified order (ids are a seeded shuffle), so
     the sample is the first n of each cell. Controls are split evenly across question types.
-    Returns records in a seeded random presentation order.
+    `exclude` drops records an earlier round already showed. Returns records in a seeded
+    random presentation order.
     """
     rows = select(records, "core", first=first)
+    if not first:
+        rows = stratified_order(rows)
+    if exclude:
+        exclude = set(exclude)
+        rows = [r for r in rows if r["id"] not in exclude]
     by_cell = {}
     for r in rows:
         by_cell.setdefault(cell_of(r), []).append(r)

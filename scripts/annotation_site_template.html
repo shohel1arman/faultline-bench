@@ -59,6 +59,8 @@ button { font: inherit; color: var(--ink); background: var(--panel); border: 1px
 button:hover { border-color: var(--accent); }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 button.chosen { background: var(--chosen); border-color: var(--accent); font-weight: 600; }
+#opts button:disabled { cursor: default; opacity: .55; }
+#opts button.chosen:disabled { opacity: 1; }
 button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .key { display: inline-block; min-width: 1.7em; color: var(--muted); font-family: var(--mono); font-size: 13px; }
 .nav { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -85,7 +87,7 @@ textarea { width: 100%; min-height: 120px; font: 12px/1.4 var(--mono); backgroun
       <li><b>Answer the question from the photo.</b> Pick the option that is true in the photo. Choose
         <i>Can't tell</i> if the photo does not let you decide (object too small, hidden, several objects
         the question could mean) or if more than one option is true. You see the description only after
-        this step.</li>
+        this step, and your answer to this step is then final: it cannot be changed.</li>
       <li><b>Does the description match the photo?</b> Read the whole description. Answer <i>No</i> if any
         part of it is false for the photo.</li>
       <li>If it does not match: <b>how obvious is the mistake?</b> <i>Obvious</i>: you notice it at once.
@@ -216,7 +218,7 @@ textarea { width: 100%; min-height: 120px; font: 12px/1.4 var(--mono); backgroun
   function pushRemote(id, a) {
     if (!remote) return;
     var body = { annotator: who, page_version: PAGE, choice: a.choice || null, matches: a.matches || null,
-      obvious: a.obvious || null, shown: a.shown || null, finished: a.finished || null };
+      obvious: a.obvious || null, shown: a.shown || null, chose: a.chose || null, finished: a.finished || null };
     writeChain = writeChain.then(function () {
       if (!remote) return;
       var ref = db.doc("ann/" + uid + "/items/" + id);
@@ -245,12 +247,14 @@ textarea { width: 100%; min-height: 120px; font: 12px/1.4 var(--mono); backgroun
       b.innerHTML = '<span class="key">' + (k + 1) + "</span>" + LETTERS[k] + ". ";
       b.appendChild(document.createTextNode(o));
       if (a.choice === o) b.className = "chosen";
+      b.disabled = !!a.choice;          // step 1 is final once the description is shown
       b.onclick = function () { setChoice(o); };
       opts.appendChild(b);
     });
     var c = document.createElement("button");
     c.innerHTML = '<span class="key">5</span>Can\'t tell, or more than one is true';
     if (a.choice === "cant_tell") c.className = "chosen";
+    c.disabled = !!a.choice;
     c.onclick = function () { setChoice("cant_tell"); };
     opts.appendChild(c);
 
@@ -275,7 +279,11 @@ textarea { width: 100%; min-height: 120px; font: 12px/1.4 var(--mono); backgroun
   }
 
   function cur() { var id = ITEMS[idx].id; answers[id] = answers[id] || {}; return answers[id]; }
-  function setChoice(v) { var a = cur(); a.choice = v; saveLocal(); render(); }
+  function setChoice(v) {
+    var a = cur();
+    if (a.choice) return;               // never change an answer given before the description was seen
+    a.choice = v; a.chose = new Date().toISOString(); saveLocal(); render();
+  }
   function setMatches(v) {
     var a = cur(); if (!a.choice) return;
     a.matches = v; if (v !== "no") delete a.obvious;
@@ -327,7 +335,7 @@ textarea { width: 100%; min-height: 120px; font: 12px/1.4 var(--mono); backgroun
       snap.docs.forEach(function (d) {
         var v = d.data() || {};
         if (v.page_version === PAGE) {
-          var a = { choice: v.choice, matches: v.matches, shown: v.shown, finished: v.finished };
+          var a = { choice: v.choice, matches: v.matches, shown: v.shown, chose: v.chose, finished: v.finished };
           if (v.obvious) a.obvious = v.obvious;
           got[d.id] = a;
         }

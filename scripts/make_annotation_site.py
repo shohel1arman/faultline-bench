@@ -5,6 +5,12 @@
 
 The second form takes the photos out of the single-file page built by make_annotation.py,
 so the hosted page shows exactly the same images. Writes annotation/site/ (not tracked).
+
+  python scripts/make_annotation_site.py --images data/images --round 2
+
+builds a second round: a new sample from the whole core set that leaves out every record
+of round 1 (annotation/sample_ids.json), with seed 2. It writes annotation/site_r2/ and
+annotation/sample_ids_r2.json.
 The hosted page saves answers to the signed-in annotator's account when the host offers a
 shared store, and otherwise in the browser with an Export button, like the single file.
 """
@@ -48,15 +54,25 @@ def main():
     src.add_argument("--images", help="data/images, resized here like make_annotation.py does")
     src.add_argument("--from-page", help="a faultline_check.html built by make_annotation.py")
     ap.add_argument("--out", default="annotation/site")
-    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--seed", type=int, default=None, help="default: 0 for round 1, the round number after")
+    ap.add_argument("--round", type=int, default=1)
     ap.add_argument("--max-side", type=int, default=640)
     ap.add_argument("--quality", type=int, default=80)
     args = ap.parse_args()
 
-    recs = sample(read_jsonl(args.dataset), seed=args.seed)
+    seed = args.seed if args.seed is not None else (0 if args.round == 1 else args.round)
+    if args.round == 1:
+        recs = sample(read_jsonl(args.dataset), seed=seed)
+    else:
+        seen = set()
+        for k in range(1, args.round):
+            name = "sample_ids.json" if k == 1 else f"sample_ids_r{k}.json"
+            with open(ROOT / "annotation" / name, encoding="utf-8") as f:
+                seen.update(json.load(f)["ids"])
+        recs = sample(read_jsonl(args.dataset), seed=seed, first=None, exclude=seen)
     ids = [r["id"] for r in recs]
     version = hashlib.sha1(",".join(ids).encode()).hexdigest()[:10]
-    out = Path(args.out)
+    out = Path(args.out if args.round == 1 or args.out != "annotation/site" else f"annotation/site_r{args.round}")
     (out / "img").mkdir(parents=True, exist_ok=True)
 
     if args.from_page:
@@ -94,6 +110,18 @@ def main():
     size = sum(p.stat().st_size for p in (out / "img").glob("*.jpg"))
     print(f"wrote {out}/index.html and {len(written)} photos ({size / 1e6:.1f} MB), "
           f"{len(items)} items, version {version}")
+    if args.round > 1:
+        from collections import Counter
+
+        from faultline.runner import cell_of
+        cells = Counter("/".join(cell_of(r)) for r in recs)
+        meta = {"page_version": version, "round": args.round, "seed": seed, "n": len(ids),
+                "cells": dict(cells), "ids": ids}
+        path = ROOT / "annotation" / f"sample_ids_r{args.round}.json"
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(meta, f, indent=1)
+            f.write("\n")
+        print(f"wrote {path.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

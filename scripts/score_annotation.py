@@ -75,6 +75,27 @@ def main():
     print(f"all annotators say a faithful description is wrong: {len(res['all_agree_control_wrong'])}")
     print(f"records valid by these checks: {pct(res['valid_rate'])}")
 
+    # Anchoring check: on conflicts the description argues for one wrong option. A step-1
+    # answer is given before the description is shown, so it should pick that option no
+    # more often than the other wrong ones (see docs/ANNOTATION.md, round 1).
+    anchor = {}
+    print("\nstep-1 answers on conflicts: picks the label / picks the description's answer / other wrong")
+    for n, done in anns.items():
+        for t in ("object", "attribute", "relation"):
+            c = {"label": 0, "description": 0, "other": 0}
+            for rid, a in done.items():
+                r = recs[rid]
+                if not r["is_conflict"] or r["conflict_type"] != t or a["choice"] == "cant_tell":
+                    continue
+                key = ("label" if a["choice"] == r["answer_image"] else
+                       "description" if a["choice"] == r["answer_text"] else "other")
+                c[key] += 1
+            anchor[f"{n}/{t}"] = c
+            tot = sum(c.values()) or 1
+            print(f"  {n} {t:<10} {100 * c['label'] / tot:5.1f} {100 * c['description'] / tot:5.1f} "
+                  f"{100 * c['other'] / tot:5.1f}  (n={sum(c.values())})")
+    res["step1_on_conflicts"] = anchor
+
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(res, f, indent=1)
